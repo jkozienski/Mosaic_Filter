@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MosaicFilterProject": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
