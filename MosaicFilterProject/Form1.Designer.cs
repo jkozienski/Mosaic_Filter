@@ -26,7 +26,8 @@
             components = new System.ComponentModel.Container();
             panel1 = new Panel();
             bottomPanel = new Panel();
-            uploadPhoto = new Button();
+            filterButton = new Button();
+            imageUpload = new Button();
             rightPanel = new Panel();
             rightPanelLabel = new Label();
             imageAfterFilter = new PictureBox();
@@ -34,6 +35,9 @@
             leftPanelLabel = new Label();
             imageBeforeFilter = new PictureBox();
             imageList1 = new ImageList(components);
+            cLibrary = new RadioButton();
+            asmLibrary = new RadioButton();
+            label1 = new Label();
             panel1.SuspendLayout();
             bottomPanel.SuspendLayout();
             rightPanel.SuspendLayout();
@@ -54,21 +58,35 @@
             // 
             // bottomPanel
             // 
-            bottomPanel.Controls.Add(uploadPhoto);
+            bottomPanel.Controls.Add(label1);
+            bottomPanel.Controls.Add(asmLibrary);
+            bottomPanel.Controls.Add(cLibrary);
+            bottomPanel.Controls.Add(filterButton);
+            bottomPanel.Controls.Add(imageUpload);
             bottomPanel.Location = new Point(21, 332);
             bottomPanel.Name = "bottomPanel";
             bottomPanel.Size = new Size(1191, 305);
             bottomPanel.TabIndex = 0;
             // 
-            // uploadPhoto
+            // filterButton
             // 
-            uploadPhoto.Location = new Point(31, 16);
-            uploadPhoto.Name = "uploadPhoto";
-            uploadPhoto.Size = new Size(170, 34);
-            uploadPhoto.TabIndex = 0;
-            uploadPhoto.Text = "Wybierz zdjecie";
-            uploadPhoto.UseVisualStyleBackColor = true;
-            uploadPhoto.Click += button1_Click;
+            filterButton.Location = new Point(824, 14);
+            filterButton.Name = "filterButton";
+            filterButton.Size = new Size(169, 33);
+            filterButton.TabIndex = 1;
+            filterButton.Text = "Filtruj zdjecie";
+            filterButton.UseVisualStyleBackColor = true;
+            filterButton.Click += filterButton_Click;
+            // 
+            // imageUpload
+            // 
+            imageUpload.Location = new Point(141, 13);
+            imageUpload.Name = "imageUpload";
+            imageUpload.Size = new Size(170, 34);
+            imageUpload.TabIndex = 0;
+            imageUpload.Text = "Wybierz zdjecie";
+            imageUpload.UseVisualStyleBackColor = true;
+            imageUpload.Click += button1_Click;
             // 
             // rightPanel
             // 
@@ -129,6 +147,38 @@
             imageList1.ImageSize = new Size(16, 16);
             imageList1.TransparentColor = Color.Transparent;
             // 
+            // cLibrary
+            // 
+            cLibrary.AutoSize = true;
+            cLibrary.Location = new Point(26, 206);
+            cLibrary.Name = "cLibrary";
+            cLibrary.Size = new Size(59, 29);
+            cLibrary.TabIndex = 2;
+            cLibrary.TabStop = true;
+            cLibrary.Text = "C#";
+            cLibrary.UseVisualStyleBackColor = true;
+            cLibrary.CheckedChanged += radioButton1_CheckedChanged;
+            // 
+            // asmLibrary
+            // 
+            asmLibrary.AutoSize = true;
+            asmLibrary.Location = new Point(26, 241);
+            asmLibrary.Name = "asmLibrary";
+            asmLibrary.Size = new Size(73, 29);
+            asmLibrary.TabIndex = 3;
+            asmLibrary.TabStop = true;
+            asmLibrary.Text = "Asm";
+            asmLibrary.UseVisualStyleBackColor = true;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(26, 178);
+            label1.Name = "label1";
+            label1.Size = new Size(163, 25);
+            label1.TabIndex = 4;
+            label1.Text = "Wybierz bibliotekę:";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
@@ -140,6 +190,7 @@
             Load += Form1_Load;
             panel1.ResumeLayout(false);
             bottomPanel.ResumeLayout(false);
+            bottomPanel.PerformLayout();
             rightPanel.ResumeLayout(false);
             rightPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)imageAfterFilter).EndInit();
@@ -157,9 +208,13 @@
         private Panel rightPanel;
         private PictureBox imageBeforeFilter;
         private PictureBox imageAfterFilter;
-        private Button uploadPhoto;
+        private Button imageUpload;
         private Label leftPanelLabel;
         private Label rightPanelLabel;
         private ImageList imageList1;
+        private Button filterButton;
+        private RadioButton asmLibrary;
+        private RadioButton cLibrary;
+        private Label label1;
     }
 }

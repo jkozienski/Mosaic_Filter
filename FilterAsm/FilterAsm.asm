@@ -1,7 +1,7 @@
 .code
-MyProc1 proc
+imageFilterAsm proc
 add RCX, RDX
 mov RAX, RCX
 ret
-MyProc1 endp
+imageFilterAsm endp
 end

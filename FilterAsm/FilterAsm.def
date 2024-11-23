@@ -1,2 +1,2 @@
 LIBRARY FilterAsm
-EXPORTS MyProc1
+EXPORTS imageFilterAsm
