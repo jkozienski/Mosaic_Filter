@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FilterCS\FilterCS.csproj" />
+    <ProjectReference Include="..\FilterCSharp\FilterCSharp.csproj" />
   </ItemGroup>
 
 </Project>
