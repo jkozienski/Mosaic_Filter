@@ -2,21 +2,21 @@ Mozaikowanie obrazu
 
 
 1.  Wymagane elementy aplikacji
-•	Graficzny interfejs użytkownika
-•	Działająca aplikacja x64
-•	Dowolna technologia GUI
+•	Graficzny interfejs użytkownika,
+•	Działająca aplikacja x64,
+•	Dowolna technologia GUI.
 •	2 tożsame biblioteki
-  o	Język wysokiego poziomu (C++/C#)
+  o	Język wysokiego poziomu (C++/C#),
   o	ASM x64
-•	Wykorzystanie wielowątkowości w zakresie 1-64 wątki
+•	Wykorzystanie wielowątkowości w zakresie 1-64 wątki.
 •	Wykrycie i domyślne ustawienie liczby wątków odpowiadającej liczbie procesorów logicznych.
 •	Pomiar czasu (w dobrych jednostkach)
-  o	3 zestawy danych
-  o	2 biblioteki
-  o	Wątki 1, 2, 4, 8, 16, 32 i 64
-  o	Uśredniony wyniki z 5 wywołań
-•	Wykorzystanie instrukcji wektorowych (sensowne!)
-•	Całość projektu realizowana w systemie kontroli wersji (preferowany github) (Opcjonalnie)
+  o	3 zestawy danych,
+  o	2 biblioteki,
+  o	Wątki 1, 2, 4, 8, 16, 32 i 64,
+  o	Uśredniony wyniki z 5 wywołań.
+•	Wykorzystanie instrukcji wektorowych (sensowne!).
+•	Całość projektu realizowana w systemie kontroli wersji (preferowany github) (Opcjonalnie).
 
 2.  Opis
 Projekt polega na stworzeniu programu, który przekształca podany obraz w mozaikę.
