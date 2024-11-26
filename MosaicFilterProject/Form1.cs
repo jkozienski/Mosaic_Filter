@@ -53,7 +53,7 @@ namespace MosaicFilterProject {
             }
         }
 
-            private void filterButton_Click(object sender, EventArgs e) {
+        private void filterButton_Click(object sender, EventArgs e) {
             try {
                 // Pobieramy obraz z PictureBox (zak³adaj¹c, ¿e obraz jest ju¿ za³adowany)
                 Bitmap originalImage = (Bitmap)imageBeforeFilter.Image;
@@ -74,6 +74,14 @@ namespace MosaicFilterProject {
         }
 
         private void radioButton1_CheckedChanged(object sender, EventArgs e) {
+        }
+
+        private void bottomPanel_Paint(object sender, PaintEventArgs e) {
+
+        }
+
+        private void label2_Click(object sender, EventArgs e) {
+
         }
     }
 }
