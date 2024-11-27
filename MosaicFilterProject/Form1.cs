@@ -55,17 +55,23 @@ namespace MosaicFilterProject {
 
         private void filterButton_Click(object sender, EventArgs e) {
             try {
-                // Pobieramy obraz z PictureBox (zak³adaj¹c, ¿e obraz jest ju¿ za³adowany)
+                // Sprawdzamy, czy obraz jest za³adowany w PictureBox
+                if (imageBeforeFilter.Image == null) {
+                    MessageBox.Show("Proszê za³adowaæ obraz przed przetwarzaniem.", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Pobieramy obraz z PictureBox
                 Bitmap originalImage = (Bitmap)imageBeforeFilter.Image;
 
-                // Wywo³anie metody z imageFilterCS, która zmienia obraz na odcienie czerwone
-                Bitmap redScaleImage = ImageFilterCS.ApplyRedScale(originalImage);
+                // Wywo³anie metody z imageFilterCS, która wykonuje mozaikowanie
+                Bitmap mosaicImage = ImageFilterCS.ApplyMosaic(originalImage, 8);  // 4x4 kafelki
 
                 // Ustawiamy zmodyfikowany obraz w PictureBox
-                imageAfterFilter.Image = redScaleImage;
+                imageAfterFilter.Image = mosaicImage;
 
                 // Wyœwietlamy komunikat o zakoñczeniu przetwarzania
-                MessageBox.Show("Obraz zosta³ przekszta³cony na odcienie czerwone.", "Informacja", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Obraz zosta³ przekszta³cony w mozaikê.", "Informacja", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex) {
                 // Obs³uga b³êdów, gdy obraz nie jest za³adowany lub wyst¹pi inny problem

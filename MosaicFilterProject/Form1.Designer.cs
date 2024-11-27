@@ -23,9 +23,10 @@
         ///  the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            components = new System.ComponentModel.Container();
             panel1 = new Panel();
             bottomPanel = new Panel();
+            trackBar1 = new TrackBar();
+            label3 = new Label();
             clearImage = new Button();
             textBox1 = new TextBox();
             label2 = new Label();
@@ -40,13 +41,17 @@
             leftPanel = new Panel();
             leftPanelLabel = new Label();
             imageBeforeFilter = new PictureBox();
-            imageList1 = new ImageList(components);
+            label4 = new Label();
+            label5 = new Label();
+            trackBar2 = new TrackBar();
             panel1.SuspendLayout();
             bottomPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBar1).BeginInit();
             rightPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)imageAfterFilter).BeginInit();
             leftPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)imageBeforeFilter).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar2).BeginInit();
             SuspendLayout();
             // 
             // panel1
@@ -62,6 +67,11 @@
             // 
             // bottomPanel
             // 
+            bottomPanel.Controls.Add(label5);
+            bottomPanel.Controls.Add(trackBar2);
+            bottomPanel.Controls.Add(label4);
+            bottomPanel.Controls.Add(trackBar1);
+            bottomPanel.Controls.Add(label3);
             bottomPanel.Controls.Add(clearImage);
             bottomPanel.Controls.Add(textBox1);
             bottomPanel.Controls.Add(label2);
@@ -76,6 +86,23 @@
             bottomPanel.Size = new Size(1160, 240);
             bottomPanel.TabIndex = 0;
             bottomPanel.Paint += bottomPanel_Paint;
+            // 
+            // trackBar1
+            // 
+            trackBar1.Location = new Point(693, 145);
+            trackBar1.Maximum = 64;
+            trackBar1.Name = "trackBar1";
+            trackBar1.Size = new Size(400, 45);
+            trackBar1.TabIndex = 64;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(600, 121);
+            label3.Name = "label3";
+            label3.Size = new Size(90, 15);
+            label3.TabIndex = 8;
+            label3.Text = "Parametryzacja:";
             // 
             // clearImage
             // 
@@ -107,7 +134,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(19, 107);
+            label1.Location = new Point(19, 121);
             label1.Margin = new Padding(2, 0, 2, 0);
             label1.Name = "label1";
             label1.Size = new Size(107, 15);
@@ -117,7 +144,7 @@
             // asmLibrary
             // 
             asmLibrary.AutoSize = true;
-            asmLibrary.Location = new Point(30, 145);
+            asmLibrary.Location = new Point(30, 159);
             asmLibrary.Margin = new Padding(2);
             asmLibrary.Name = "asmLibrary";
             asmLibrary.Size = new Size(49, 19);
@@ -129,7 +156,7 @@
             // cLibrary
             // 
             cLibrary.AutoSize = true;
-            cLibrary.Location = new Point(30, 124);
+            cLibrary.Location = new Point(30, 138);
             cLibrary.Margin = new Padding(2);
             cLibrary.Name = "cLibrary";
             cLibrary.Size = new Size(40, 19);
@@ -222,11 +249,30 @@
             imageBeforeFilter.TabIndex = 0;
             imageBeforeFilter.TabStop = false;
             // 
-            // imageList1
+            // label4
             // 
-            imageList1.ColorDepth = ColorDepth.Depth32Bit;
-            imageList1.ImageSize = new Size(16, 16);
-            imageList1.TransparentColor = Color.Transparent;
+            label4.AutoSize = true;
+            label4.Location = new Point(600, 145);
+            label4.Name = "label4";
+            label4.Size = new Size(87, 15);
+            label4.TabIndex = 10;
+            label4.Text = "Liczba wątków:";
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(734, 204);
+            label5.Name = "label5";
+            label5.Size = new Size(97, 15);
+            label5.TabIndex = 65;
+            label5.Text = "Rozmiar mozaiki:";
+            // 
+            // trackBar2
+            // 
+            trackBar2.Location = new Point(837, 192);
+            trackBar2.Name = "trackBar2";
+            trackBar2.Size = new Size(120, 45);
+            trackBar2.TabIndex = 66;
             // 
             // Form1
             // 
@@ -241,12 +287,14 @@
             panel1.ResumeLayout(false);
             bottomPanel.ResumeLayout(false);
             bottomPanel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBar1).EndInit();
             rightPanel.ResumeLayout(false);
             rightPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)imageAfterFilter).EndInit();
             leftPanel.ResumeLayout(false);
             leftPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)imageBeforeFilter).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar2).EndInit();
             ResumeLayout(false);
         }
 
@@ -261,7 +309,6 @@
         private Button imageUpload;
         private Label leftPanelLabel;
         private Label rightPanelLabel;
-        private ImageList imageList1;
         private Button filterButton;
         private RadioButton asmLibrary;
         private RadioButton cLibrary;
@@ -269,5 +316,10 @@
         private Label label2;
         private TextBox textBox1;
         private Button clearImage;
+        private Label label3;
+        private TrackBar trackBar1;
+        private Label label5;
+        private TrackBar trackBar2;
+        private Label label4;
     }
 }
