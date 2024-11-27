@@ -25,6 +25,9 @@
         private void InitializeComponent() {
             panel1 = new Panel();
             bottomPanel = new Panel();
+            label5 = new Label();
+            mosaicPower = new TrackBar();
+            label4 = new Label();
             trackBar1 = new TrackBar();
             label3 = new Label();
             clearImage = new Button();
@@ -41,17 +44,14 @@
             leftPanel = new Panel();
             leftPanelLabel = new Label();
             imageBeforeFilter = new PictureBox();
-            label4 = new Label();
-            label5 = new Label();
-            trackBar2 = new TrackBar();
             panel1.SuspendLayout();
             bottomPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)mosaicPower).BeginInit();
             ((System.ComponentModel.ISupportInitialize)trackBar1).BeginInit();
             rightPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)imageAfterFilter).BeginInit();
             leftPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)imageBeforeFilter).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar2).BeginInit();
             SuspendLayout();
             // 
             // panel1
@@ -68,7 +68,7 @@
             // bottomPanel
             // 
             bottomPanel.Controls.Add(label5);
-            bottomPanel.Controls.Add(trackBar2);
+            bottomPanel.Controls.Add(mosaicPower);
             bottomPanel.Controls.Add(label4);
             bottomPanel.Controls.Add(trackBar1);
             bottomPanel.Controls.Add(label3);
@@ -86,6 +86,34 @@
             bottomPanel.Size = new Size(1160, 240);
             bottomPanel.TabIndex = 0;
             bottomPanel.Paint += bottomPanel_Paint;
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(734, 204);
+            label5.Name = "label5";
+            label5.Size = new Size(97, 15);
+            label5.TabIndex = 65;
+            label5.Text = "Rozmiar mozaiki:";
+            // 
+            // mosaicPower
+            // 
+            mosaicPower.Location = new Point(837, 192);
+            mosaicPower.Maximum = 20;
+            mosaicPower.Minimum = 1;
+            mosaicPower.Name = "mosaicPower";
+            mosaicPower.Size = new Size(120, 45);
+            mosaicPower.TabIndex = 66;
+            mosaicPower.Value = 4;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(600, 145);
+            label4.Name = "label4";
+            label4.Size = new Size(87, 15);
+            label4.TabIndex = 10;
+            label4.Text = "Liczba wątków:";
             // 
             // trackBar1
             // 
@@ -249,31 +277,6 @@
             imageBeforeFilter.TabIndex = 0;
             imageBeforeFilter.TabStop = false;
             // 
-            // label4
-            // 
-            label4.AutoSize = true;
-            label4.Location = new Point(600, 145);
-            label4.Name = "label4";
-            label4.Size = new Size(87, 15);
-            label4.TabIndex = 10;
-            label4.Text = "Liczba wątków:";
-            // 
-            // label5
-            // 
-            label5.AutoSize = true;
-            label5.Location = new Point(734, 204);
-            label5.Name = "label5";
-            label5.Size = new Size(97, 15);
-            label5.TabIndex = 65;
-            label5.Text = "Rozmiar mozaiki:";
-            // 
-            // trackBar2
-            // 
-            trackBar2.Location = new Point(837, 192);
-            trackBar2.Name = "trackBar2";
-            trackBar2.Size = new Size(120, 45);
-            trackBar2.TabIndex = 66;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -287,6 +290,7 @@
             panel1.ResumeLayout(false);
             bottomPanel.ResumeLayout(false);
             bottomPanel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)mosaicPower).EndInit();
             ((System.ComponentModel.ISupportInitialize)trackBar1).EndInit();
             rightPanel.ResumeLayout(false);
             rightPanel.PerformLayout();
@@ -294,7 +298,6 @@
             leftPanel.ResumeLayout(false);
             leftPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)imageBeforeFilter).EndInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar2).EndInit();
             ResumeLayout(false);
         }
 
@@ -319,7 +322,7 @@
         private Label label3;
         private TrackBar trackBar1;
         private Label label5;
-        private TrackBar trackBar2;
+        private TrackBar mosaicPower;
         private Label label4;
     }
 }

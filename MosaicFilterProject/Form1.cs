@@ -31,50 +31,51 @@ namespace MosaicFilterProject {
 
         private void button1_Click(object sender, EventArgs e) {
             try {
-                // Tworzymy obiekt dialogu do wyboru pliku
+                // Tworze obiekt dialogu do wyboru pliku
                 OpenFileDialog dialog = new OpenFileDialog();
                 dialog.Filter = "PNG files(*.png)|*.png";  // Tylko pliki PNG
 
-                // Sprawdzamy, czy u¿ytkownik wybra³ plik
+                // Sprawdzay, czy u¿ytkownik wybra³ plik
                 if (dialog.ShowDialog() == DialogResult.OK) {
                     // Wczytanie obrazu
                     Bitmap originalImage = new Bitmap(dialog.FileName);
 
-                    // Ustawiamy wczytany obraz w PictureBox
+                    // Ustawiam wczytany obraz w PictureBox
                     imageBeforeFilter.Image = originalImage;
-                    // Mo¿esz zapisaæ lokalizacjê i nazwê pliku, jeœli potrzebujesz
+                   
                     selectedImageLocation = dialog.FileName;
                     selectedImageName = System.IO.Path.GetFileName(dialog.FileName);
                 }
             }
             catch (Exception ex) {
-                // W przypadku b³êdu, wyœwietl komunikat
+                
                 MessageBox.Show($"Wyst¹pi³ b³¹d: {ex.Message}", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void filterButton_Click(object sender, EventArgs e) {
             try {
-                // Sprawdzamy, czy obraz jest za³adowany w PictureBox
+                // Sprawdzam, czy obraz jest za³adowany w PictureBox
                 if (imageBeforeFilter.Image == null) {
                     MessageBox.Show("Proszê za³adowaæ obraz przed przetwarzaniem.", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // Pobieramy obraz z PictureBox
+                // Pobieram obraz z PictureBox
                 Bitmap originalImage = (Bitmap)imageBeforeFilter.Image;
 
-                // Wywo³anie metody z imageFilterCS, która wykonuje mozaikowanie
-                Bitmap mosaicImage = ImageFilterCS.ApplyMosaic(originalImage, 8);  // 4x4 kafelki
+                // Pobieram wartoœæ z suwaka mosaicPower
+                int tileSize = mosaicPower.Value; 
 
-                // Ustawiamy zmodyfikowany obraz w PictureBox
+                Bitmap mosaicImage = ImageFilterCS.ApplyMosaic(originalImage, tileSize);
+
+                // Ustawiam zmodyfikowany obraz w PictureBox
                 imageAfterFilter.Image = mosaicImage;
 
-                // Wyœwietlamy komunikat o zakoñczeniu przetwarzania
-                MessageBox.Show("Obraz zosta³ przekszta³cony w mozaikê.", "Informacja", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // Wyœwietlam komunikat o zakoñczeniu pracy 
+                MessageBox.Show($"Obraz zosta³ przekszta³cony w mozaikê z kafelkami o rozmiarze {tileSize}x{tileSize}.", "Informacja", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex) {
-                // Obs³uga b³êdów, gdy obraz nie jest za³adowany lub wyst¹pi inny problem
                 MessageBox.Show($"Wyst¹pi³ b³¹d: {ex.Message}", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
