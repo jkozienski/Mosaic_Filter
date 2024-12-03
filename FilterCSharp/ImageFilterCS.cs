@@ -1,5 +1,7 @@
 ﻿using System;
-using System.Drawing;  // Dla klasy Bitmap
+using System.Drawing;
+using System.Threading;
+using System.Collections.Generic;
 
 namespace FilterCSharp {
     public class ImageFilterCS {
@@ -8,40 +10,12 @@ namespace FilterCSharp {
             return 133;
         }
 
-        // Metoda zmieniająca obraz na odcienie czerwone
-        public static Bitmap ApplyRedScale(Bitmap originalImage) {
-            // Tworzymy kopię obrazu
-            Bitmap newImage = new Bitmap(originalImage);
-
-            // Iteruje przez każdy piksel obrazu
-            for (int y = 0; y < originalImage.Height; y++) {
-                for (int x = 0; x < originalImage.Width; x++) {
-                    // Pobieram kolor piksela
-                    Color originalColor = originalImage.GetPixel(x, y);
-
-                   
-                    byte red = originalColor.R;
-                    byte green = 0;
-                    byte blue = 0;
-
-                    // Tworze nowy kolor z czerwonym kanałem
-                    Color newColor = Color.FromArgb(red, green, blue);
-
-                    // Ustawiamy nowy kolor na pikselu
-                    newImage.SetPixel(x, y, newColor);
-                }
-            }
-
-            // Zwracam zmodyfikowany obraz
-            return newImage;
-        }
-
-
+        // Metoda wykonująca mozaikowanie obrazu z wykorzystaniem wielu wątków
         public static Bitmap ApplyMosaic(Bitmap originalImage, int tileSize) {
             // Tworzymy kopię obrazu
             Bitmap newImage = new Bitmap(originalImage);
 
-            // Iteruje po obrazie, dzieląc go na kafelki
+            // Iterujemy po obrazie, dzieląc go na kafelki
             for (int y = 0; y < originalImage.Height; y += tileSize) {
                 for (int x = 0; x < originalImage.Width; x += tileSize) {
                     // Obliczamy średni kolor dla danego kafelka
@@ -55,10 +29,9 @@ namespace FilterCSharp {
                     }
                 }
             }
-
-            // Zwracam obraz
             return newImage;
         }
+
 
         // Funkcja obliczająca średni kolor pikseli w obrębie danego kafelka
         private static Color GetAverageColor(Bitmap image, int xStart, int yStart, int tileSize) {
@@ -75,12 +48,10 @@ namespace FilterCSharp {
                 }
             }
 
-            // Oblicza średnią wartość dla RGB
             r /= count;
             g /= count;
             b /= count;
 
-            // Tworzymy nowy kolor z wyliczonych wartości RGB
             return Color.FromArgb(r, g, b);
         }
     }

@@ -28,14 +28,14 @@
             label5 = new Label();
             mosaicPower = new TrackBar();
             label4 = new Label();
-            trackBar1 = new TrackBar();
+            threadNumber = new TrackBar();
             label3 = new Label();
             clearImage = new Button();
-            textBox1 = new TextBox();
+            locationTextBox = new TextBox();
             label2 = new Label();
             label1 = new Label();
-            asmLibrary = new RadioButton();
-            cLibrary = new RadioButton();
+            radioASM = new RadioButton();
+            radioCSharp = new RadioButton();
             filterButton = new Button();
             imageUpload = new Button();
             rightPanel = new Panel();
@@ -47,7 +47,7 @@
             panel1.SuspendLayout();
             bottomPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)mosaicPower).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)threadNumber).BeginInit();
             rightPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)imageAfterFilter).BeginInit();
             leftPanel.SuspendLayout();
@@ -70,14 +70,14 @@
             bottomPanel.Controls.Add(label5);
             bottomPanel.Controls.Add(mosaicPower);
             bottomPanel.Controls.Add(label4);
-            bottomPanel.Controls.Add(trackBar1);
+            bottomPanel.Controls.Add(threadNumber);
             bottomPanel.Controls.Add(label3);
             bottomPanel.Controls.Add(clearImage);
-            bottomPanel.Controls.Add(textBox1);
+            bottomPanel.Controls.Add(locationTextBox);
             bottomPanel.Controls.Add(label2);
             bottomPanel.Controls.Add(label1);
-            bottomPanel.Controls.Add(asmLibrary);
-            bottomPanel.Controls.Add(cLibrary);
+            bottomPanel.Controls.Add(radioASM);
+            bottomPanel.Controls.Add(radioCSharp);
             bottomPanel.Controls.Add(filterButton);
             bottomPanel.Controls.Add(imageUpload);
             bottomPanel.Location = new Point(3, 284);
@@ -98,13 +98,14 @@
             // 
             // mosaicPower
             // 
-            mosaicPower.Location = new Point(837, 192);
-            mosaicPower.Maximum = 20;
+            mosaicPower.Location = new Point(837, 195);
+            mosaicPower.Maximum = 100;
             mosaicPower.Minimum = 1;
             mosaicPower.Name = "mosaicPower";
             mosaicPower.Size = new Size(120, 45);
             mosaicPower.TabIndex = 66;
             mosaicPower.Value = 4;
+            mosaicPower.Scroll += mosaicPower_Scroll;
             // 
             // label4
             // 
@@ -115,13 +116,16 @@
             label4.TabIndex = 10;
             label4.Text = "Liczba wątków:";
             // 
-            // trackBar1
+            // threadNumber
             // 
-            trackBar1.Location = new Point(693, 145);
-            trackBar1.Maximum = 64;
-            trackBar1.Name = "trackBar1";
-            trackBar1.Size = new Size(400, 45);
-            trackBar1.TabIndex = 64;
+            threadNumber.Location = new Point(693, 145);
+            threadNumber.Maximum = 64;
+            threadNumber.Minimum = 1;
+            threadNumber.Name = "threadNumber";
+            threadNumber.Size = new Size(400, 45);
+            threadNumber.TabIndex = 64;
+            threadNumber.Value = 1;
+            threadNumber.Scroll += trackBar1_Scroll;
             // 
             // label3
             // 
@@ -141,13 +145,15 @@
             clearImage.TabIndex = 7;
             clearImage.Text = "Wyczyść zdjecie";
             clearImage.UseVisualStyleBackColor = true;
+            clearImage.Click += clearImage_Click;
             // 
-            // textBox1
+            // locationTextBox
             // 
-            textBox1.Location = new Point(92, 17);
-            textBox1.Name = "textBox1";
-            textBox1.Size = new Size(305, 23);
-            textBox1.TabIndex = 6;
+            locationTextBox.Location = new Point(92, 17);
+            locationTextBox.Name = "locationTextBox";
+            locationTextBox.Size = new Size(305, 23);
+            locationTextBox.TabIndex = 6;
+            locationTextBox.TextChanged += textBox1_TextChanged;
             // 
             // label2
             // 
@@ -169,30 +175,30 @@
             label1.TabIndex = 4;
             label1.Text = "Wybierz bibliotekę:";
             // 
-            // asmLibrary
+            // radioASM
             // 
-            asmLibrary.AutoSize = true;
-            asmLibrary.Location = new Point(30, 159);
-            asmLibrary.Margin = new Padding(2);
-            asmLibrary.Name = "asmLibrary";
-            asmLibrary.Size = new Size(49, 19);
-            asmLibrary.TabIndex = 3;
-            asmLibrary.TabStop = true;
-            asmLibrary.Text = "Asm";
-            asmLibrary.UseVisualStyleBackColor = true;
+            radioASM.AutoSize = true;
+            radioASM.Location = new Point(30, 159);
+            radioASM.Margin = new Padding(2);
+            radioASM.Name = "radioASM";
+            radioASM.Size = new Size(49, 19);
+            radioASM.TabIndex = 3;
+            radioASM.Text = "Asm";
+            radioASM.UseVisualStyleBackColor = true;
             // 
-            // cLibrary
+            // radioCSharp
             // 
-            cLibrary.AutoSize = true;
-            cLibrary.Location = new Point(30, 138);
-            cLibrary.Margin = new Padding(2);
-            cLibrary.Name = "cLibrary";
-            cLibrary.Size = new Size(40, 19);
-            cLibrary.TabIndex = 2;
-            cLibrary.TabStop = true;
-            cLibrary.Text = "C#";
-            cLibrary.UseVisualStyleBackColor = true;
-            cLibrary.CheckedChanged += radioButton1_CheckedChanged;
+            radioCSharp.AutoSize = true;
+            radioCSharp.Checked = true;
+            radioCSharp.Location = new Point(30, 138);
+            radioCSharp.Margin = new Padding(2);
+            radioCSharp.Name = "radioCSharp";
+            radioCSharp.Size = new Size(40, 19);
+            radioCSharp.TabIndex = 2;
+            radioCSharp.TabStop = true;
+            radioCSharp.Text = "C#";
+            radioCSharp.UseVisualStyleBackColor = true;
+            radioCSharp.CheckedChanged += radioButton1_CheckedChanged;
             // 
             // filterButton
             // 
@@ -238,11 +244,11 @@
             // 
             // imageAfterFilter
             // 
-            imageAfterFilter.Location = new Point(83, 36);
+            imageAfterFilter.Location = new Point(83, 48);
             imageAfterFilter.Margin = new Padding(2);
             imageAfterFilter.Name = "imageAfterFilter";
             imageAfterFilter.Size = new Size(400, 200);
-            imageAfterFilter.SizeMode = PictureBoxSizeMode.CenterImage;
+            imageAfterFilter.SizeMode = PictureBoxSizeMode.Zoom;
             imageAfterFilter.TabIndex = 1;
             imageAfterFilter.TabStop = false;
             // 
@@ -269,11 +275,11 @@
             // 
             // imageBeforeFilter
             // 
-            imageBeforeFilter.Location = new Point(65, 36);
+            imageBeforeFilter.Location = new Point(65, 48);
             imageBeforeFilter.Margin = new Padding(2);
             imageBeforeFilter.Name = "imageBeforeFilter";
             imageBeforeFilter.Size = new Size(400, 200);
-            imageBeforeFilter.SizeMode = PictureBoxSizeMode.CenterImage;
+            imageBeforeFilter.SizeMode = PictureBoxSizeMode.Zoom;
             imageBeforeFilter.TabIndex = 0;
             imageBeforeFilter.TabStop = false;
             // 
@@ -291,7 +297,7 @@
             bottomPanel.ResumeLayout(false);
             bottomPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)mosaicPower).EndInit();
-            ((System.ComponentModel.ISupportInitialize)trackBar1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)threadNumber).EndInit();
             rightPanel.ResumeLayout(false);
             rightPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)imageAfterFilter).EndInit();
@@ -313,14 +319,14 @@
         private Label leftPanelLabel;
         private Label rightPanelLabel;
         private Button filterButton;
-        private RadioButton asmLibrary;
-        private RadioButton cLibrary;
+        private RadioButton radioASM;
+        private RadioButton radioCSharp;
         private Label label1;
         private Label label2;
-        private TextBox textBox1;
+        private TextBox locationTextBox;
         private Button clearImage;
         private Label label3;
-        private TrackBar trackBar1;
+        private TrackBar threadNumber;
         private Label label5;
         private TrackBar mosaicPower;
         private Label label4;

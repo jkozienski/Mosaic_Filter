@@ -1,18 +1,21 @@
-using System;
+ï»¿using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using FilterCSharp;  // Dodaj przestrzeñ nazw dla klasy imageFilterCS
+using FilterCSharp;  // Dodaj przestrzeÅ„ nazw dla klasy imageFilterCS
 
 namespace MosaicFilterProject {
     public partial class Form1 : Form {
         // Deklaracja funkcji z DLL ASM
-        [DllImport(@"C:\Users\Jakub\source\repos\Sem V\MosaicFilter\MosaicFilterProject\x64\Debug\FilterAsm.dll")]
+        //[DllImport(@"C:\Users\Jakub\source\repos\Sem V\MosaicFilter\MosaicFilterProject\x64\Debug\FilterAsm.dll")]//laptop
+        [DllImport(@"C:\Users\Jakub\source\repos\Repozytorium Sem 5\JA\MosaicFilter\x64\Debug\FilterAsm.dll")]//komputer
+
         static extern int imageFilterAsm(int a, int b);
+        //private static extern int filterProc2(int x, int y);
+
 
 
         private string selectedImageLocation;
-        private string selectedImageName;
         public Form1() {
             InitializeComponent();
         }
@@ -22,63 +25,66 @@ namespace MosaicFilterProject {
 
         private void label1_Click(object sender, EventArgs e) {
         }
-        // Wywo³anie funkcji z CSharp
+        // WywoÅ‚anie funkcji z CSharp
         //int res12 = FilterCSharp.ImageFilterCS.test();
-        //MessageBox.Show($"CSLIB {res12}", "Wynik obliczeñ");
-        // Wywo³anie funkcji z ASM
+        //MessageBox.Show($"CSLIB {res12}", "Wynik obliczeÅ„");
+        // WywoÅ‚anie funkcji z ASM
         //int result = imageFilterAsm(12, 3);
-        // MessageBox.Show($"Wynik z MyProc1: {result}", "Wynik obliczeñ");
+        // MessageBox.Show($"Wynik z MyProc1: {result}", "Wynik obliczeÅ„");
+        // WywoÅ‚anie funkcji z ASM
 
         private void button1_Click(object sender, EventArgs e) {
             try {
-                // Tworze obiekt dialogu do wyboru pliku
+                // Tworzymy obiekt dialogu do wyboru pliku
                 OpenFileDialog dialog = new OpenFileDialog();
-                dialog.Filter = "PNG files(*.png)|*.png";  // Tylko pliki PNG
+                dialog.Filter = "PNG files(*.png)|*.png|JPEG files(*.jpeg)|*.jpeg|JPG files(*.jpg)|*.jpg|All files(*.*)|*.*";  // Filtry dla rÃ³Å¼nych typÃ³w plikÃ³w
 
-                // Sprawdzay, czy u¿ytkownik wybra³ plik
+                // Sprawdzamy, czy uÅ¼ytkownik wybraÅ‚ plik
                 if (dialog.ShowDialog() == DialogResult.OK) {
-                    // Wczytanie obrazu
                     Bitmap originalImage = new Bitmap(dialog.FileName);
 
-                    // Ustawiam wczytany obraz w PictureBox
                     imageBeforeFilter.Image = originalImage;
-                   
+
                     selectedImageLocation = dialog.FileName;
-                    selectedImageName = System.IO.Path.GetFileName(dialog.FileName);
+                    locationTextBox.Text = selectedImageLocation; 
+
                 }
             }
             catch (Exception ex) {
-                
-                MessageBox.Show($"Wyst¹pi³ b³¹d: {ex.Message}", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // W przypadku bÅ‚Ä™du, wyÅ›wietl komunikat
+                MessageBox.Show($"WystÄ…piÅ‚ bÅ‚Ä…d: {ex.Message}", "BÅ‚Ä…d", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private void filterButton_Click(object sender, EventArgs e) {
             try {
-                // Sprawdzam, czy obraz jest za³adowany w PictureBox
                 if (imageBeforeFilter.Image == null) {
-                    MessageBox.Show("Proszê za³adowaæ obraz przed przetwarzaniem.", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("ProszÄ™ zaÅ‚adowaÄ‡ obraz przed przetwarzaniem.", "BÅ‚Ä…d", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // Pobieram obraz z PictureBox
+                
                 Bitmap originalImage = (Bitmap)imageBeforeFilter.Image;
 
-                // Pobieram wartoœæ z suwaka mosaicPower
                 int tileSize = mosaicPower.Value; 
+                if (radioCSharp.Checked) {
+                    Bitmap mosaicImage = ImageFilterCS.ApplyMosaic(originalImage, tileSize);
+                    imageAfterFilter.Image = mosaicImage;
+                    MessageBox.Show($"Obraz zostaÅ‚ przeksztaÅ‚cony w mozaikÄ™ z kafelkami o rozmiarze {tileSize}x{tileSize}.", "Wybrano C#", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                Bitmap mosaicImage = ImageFilterCS.ApplyMosaic(originalImage, tileSize);
+                } else {
+                        int result = imageFilterAsm(12, 3); 
+                        MessageBox.Show($"UÅ¼yto biblioteki ASM, wynik: {result}", "Wybrano Asm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
 
-                // Ustawiam zmodyfikowany obraz w PictureBox
-                imageAfterFilter.Image = mosaicImage;
-
-                // Wyœwietlam komunikat o zakoñczeniu pracy 
-                MessageBox.Show($"Obraz zosta³ przekszta³cony w mozaikê z kafelkami o rozmiarze {tileSize}x{tileSize}.", "Informacja", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex) {
-                MessageBox.Show($"Wyst¹pi³ b³¹d: {ex.Message}", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"WystÄ…piÅ‚ bÅ‚Ä…d: {ex.Message}", "BÅ‚Ä…d", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+
 
         private void radioButton1_CheckedChanged(object sender, EventArgs e) {
         }
@@ -89,6 +95,25 @@ namespace MosaicFilterProject {
 
         private void label2_Click(object sender, EventArgs e) {
 
+        }
+
+        private void trackBar1_Scroll(object sender, EventArgs e) {
+        }
+
+        private void mosaicPower_Scroll(object sender, EventArgs e) {
+
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e) {
+
+        }
+
+        private void clearImage_Click(object sender, EventArgs e) {
+            imageBeforeFilter.Image = null;
+
+            locationTextBox.Clear();
+
+            selectedImageLocation = string.Empty;
         }
     }
 }
