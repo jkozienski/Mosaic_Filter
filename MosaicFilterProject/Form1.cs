@@ -10,10 +10,10 @@ namespace MosaicFilterProject {
     public partial class Form1 : Form {
         //[DllImport(@"C:\Users\Jakub\source\repos\Sem V\MosaicFilter\MosaicFilterProject\x64\Debug\FilterAsm.dll")]//laptop
         [DllImport(@"C:\Users\Jakub\source\repos\Repozytorium Sem 5\JA\MosaicFilter\x64\Debug\FilterAsm.dll")]//komputer
-        private static extern void ApplyRedFilter(
-            IntPtr sourcePtr,
-            int width,
-            int height
+        private static extern void ApplyMosaicASM(
+            IntPtr sourcePtr,   // wskaźnik do danych obrazu
+            int width,          // szerokość fragmentu
+            int height          // wysokość fragmentu
         );
 
         //static extern int imageFilterAsm(int a, int b);
@@ -34,61 +34,44 @@ namespace MosaicFilterProject {
         private void label1_Click(object sender, EventArgs e) {
         }
 
-        private void button1_Click(object sender, EventArgs e) {
-            try {
-                // Tworzymy obiekt dialogu do wyboru pliku
-                OpenFileDialog dialog = new OpenFileDialog();
-                dialog.Filter = "PNG files(*.png)|*.png|JPEG files(*.jpeg)|*.jpeg|JPG files(*.jpg)|*.jpg|All files(*.*)|*.*";  //PNG i JPEG
-
-                // Sprawdzamy, czy użytkownik wybrał plik
-                if (dialog.ShowDialog() == DialogResult.OK) {
-                    Bitmap originalImage = new Bitmap(dialog.FileName);
-
-                    imageBeforeFilter.Image = originalImage;
-
-                    selectedImageLocation = dialog.FileName;
-                    locationTextBox.Text = selectedImageLocation;
-
-                }
-            }
-            catch (Exception ex) {
-                MessageBox.Show($"Wystąpił błąd: {ex.Message}", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-
+      
         private void filterButton_Click(object sender, EventArgs e) {
             try {
-                if (imageBeforeFilter.Image == null) {
-                    MessageBox.Show("Proszę załadować obraz przed przetwarzaniem.", "Błąd",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                if (imageBeforeFilter.Image == null) return;
 
-                
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
                 using (Bitmap originalImage = new Bitmap(imageBeforeFilter.Image))
                 using (Bitmap newImage = new Bitmap(originalImage)) {
+                    const int MAX_FRAGMENTS = 10000;
                     int tileSize = mosaicPower.Value;
 
-                    // Obliczamy liczbę fragmentów bazując na rozmiarze kafelka
+                    // Obliczamy początkową liczbę fragmentów
                     int fragmentsX = (int)Math.Ceiling((double)originalImage.Width / tileSize);
                     int fragmentsY = (int)Math.Ceiling((double)originalImage.Height / tileSize);
                     int totalFragments = fragmentsX * fragmentsY;
 
+                    // Jeśli liczba fragmentów przekracza limit, zwiększamy rozmiar fragmentu
+                    int fragmentSize = tileSize;
+                    while (totalFragments > MAX_FRAGMENTS) {
+                        fragmentSize += tileSize * 4; // Zwiększamy o 4 kafelki
+                        fragmentsX = (int)Math.Ceiling((double)originalImage.Width / fragmentSize);
+                        fragmentsY = (int)Math.Ceiling((double)originalImage.Height / fragmentSize);
+                        totalFragments = fragmentsX * fragmentsY;
+                    }
+
                     Bitmap[] fragments = new Bitmap[totalFragments];
 
-                    // Podział obrazu głownego na fragmenty 
+                    // Dzielimy obraz na fragmenty
                     for (int y = 0; y < fragmentsY; y++) {
                         for (int x = 0; x < fragmentsX; x++) {
                             int index = y * fragmentsX + x;
-                            int currentWidth = Math.Min(tileSize, originalImage.Width - (x * tileSize));
-                            int currentHeight = Math.Min(tileSize, originalImage.Height - (y * tileSize));
+                            int currentWidth = Math.Min(fragmentSize, originalImage.Width - (x * fragmentSize));
+                            int currentHeight = Math.Min(fragmentSize, originalImage.Height - (y * fragmentSize));
 
                             Rectangle cropRect = new Rectangle(
-                                x * tileSize,
-                                y * tileSize,
+                                x * fragmentSize,
+                                y * fragmentSize,
                                 currentWidth,
                                 currentHeight
                             );
@@ -103,16 +86,20 @@ namespace MosaicFilterProject {
                         }
                     }
 
-                    // Przetwarzanie równoległe
+                    // Przetwarzanie równoległe - każdy wątek przetwarza jeden fragment
                     Parallel.For(0, totalFragments, i => {
                         if (radioCSharp.Checked) {
                             int x = i % fragmentsX;
                             int y = i / fragmentsX;
-                            Point fragmentPosition = new Point(x * tileSize, y * tileSize);
+                            Point fragmentPosition = new Point(x * fragmentSize, y * fragmentSize);
 
-                            fragments[i] = ImageFilterCS.ApplyMosaic(fragments[i], tileSize, fragmentPosition);
+                            fragments[i] = ImageFilterCS.ApplyMosaic(
+                                fragments[i],
+                                tileSize, // Używamy oryginalnego rozmiaru kafelka do mozaikowania
+                                fragmentPosition
+                            );
                         } else {
-                           //ASM
+                            // Implementacja ASM...
                         }
                     });
 
@@ -121,7 +108,7 @@ namespace MosaicFilterProject {
                         for (int y = 0; y < fragmentsY; y++) {
                             for (int x = 0; x < fragmentsX; x++) {
                                 int index = y * fragmentsX + x;
-                                g.DrawImage(fragments[index], x * tileSize, y * tileSize);
+                                g.DrawImage(fragments[index], x * fragmentSize, y * fragmentSize);
                                 fragments[index].Dispose();
                             }
                         }
@@ -131,8 +118,10 @@ namespace MosaicFilterProject {
                     imageAfterFilter.Image = (Bitmap)newImage.Clone();
 
                     stopwatch.Stop();
-
-                    MessageBox.Show($"Gotowe\nCzas wykonania: {stopwatch.ElapsedMilliseconds} ms",
+                    MessageBox.Show($"Gotowe\nCzas wykonania: {stopwatch.ElapsedMilliseconds} ms\n" +
+                                  $"Liczba fragmentów: {totalFragments}\n" +
+                                  $"Rozmiar fragmentu: {fragmentSize}px\n" +
+                                  $"Rozmiar kafelka: {tileSize}px",
                         "Gotowe", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
@@ -141,7 +130,6 @@ namespace MosaicFilterProject {
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
 
 
         private void radioButton1_CheckedChanged(object sender, EventArgs e) {
@@ -171,6 +159,7 @@ namespace MosaicFilterProject {
 
         private void clearImage_Click(object sender, EventArgs e) {
             imageBeforeFilter.Image = null;
+            imageAfterFilter.Image = null;
 
             locationTextBox.Clear();
 
@@ -185,6 +174,28 @@ namespace MosaicFilterProject {
         }
 
         private void mosaicPowerText_Click(object sender, EventArgs e) {
+        }
+
+        private void imageUpload_Click(object sender, EventArgs e) {
+            try {
+                // Tworzymy obiekt dialogu do wyboru pliku
+                OpenFileDialog dialog = new OpenFileDialog();
+                dialog.Filter = "PNG files(*.png)|*.png|JPEG files(*.jpeg)|*.jpeg|JPG files(*.jpg)|*.jpg|All files(*.*)|*.*";  //PNG i JPEG
+
+                // Sprawdzamy, czy użytkownik wybrał plik
+                if (dialog.ShowDialog() == DialogResult.OK) {
+                    Bitmap originalImage = new Bitmap(dialog.FileName);
+
+                    imageBeforeFilter.Image = originalImage;
+
+                    selectedImageLocation = dialog.FileName;
+                    locationTextBox.Text = selectedImageLocation;
+
+                }
+            }
+            catch (Exception ex) {
+                MessageBox.Show($"Wystąpił błąd: {ex.Message}", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

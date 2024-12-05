@@ -243,7 +243,7 @@
             imageUpload.TabIndex = 0;
             imageUpload.Text = "Wybierz zdjecie";
             imageUpload.UseVisualStyleBackColor = true;
-            imageUpload.Click += button1_Click;
+            imageUpload.Click += imageUpload_Click;
             // 
             // rightPanel
             // 
