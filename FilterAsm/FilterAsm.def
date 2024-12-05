@@ -1,2 +1,3 @@
 LIBRARY FilterAsm
-EXPORTS imageFilterAsm
+EXPORTS ApplyRedFilter
+

@@ -2,58 +2,66 @@
 using System.Drawing;
 using System.Threading;
 using System.Collections.Generic;
-
+using System.Drawing.Imaging;
 namespace FilterCSharp {
     public class ImageFilterCS {
-        // Przykładowa metoda testowa
-        public static int test() {
-            return 133;
-        }
+        public static Bitmap ApplyMosaic(Bitmap fragment, int tileSize, Point position) {
+            var bmpData = fragment.LockBits(
+                new Rectangle(0, 0, fragment.Width, fragment.Height),
+                ImageLockMode.ReadWrite,
+                PixelFormat.Format32bppArgb);
 
-        // Metoda wykonująca mozaikowanie obrazu z wykorzystaniem wielu wątków
-        public static Bitmap ApplyMosaic(Bitmap originalImage, int tileSize) {
-            // Tworzymy kopię obrazu
-            Bitmap newImage = new Bitmap(originalImage);
+            try {
+                unsafe {
+                    byte* ptr = (byte*)bmpData.Scan0;
 
-            // Iterujemy po obrazie, dzieląc go na kafelki
-            for (int y = 0; y < originalImage.Height; y += tileSize) {
-                for (int x = 0; x < originalImage.Width; x += tileSize) {
-                    // Obliczamy średni kolor dla danego kafelka
-                    Color averageColor = GetAverageColor(originalImage, x, y, tileSize);
+                    // Sredni kolor dla fragmentu
+                    var avgColor = GetAverageColor(ptr, bmpData.Stride, fragment.Width, fragment.Height);
 
-                    // Zastępujemy wszystkie piksele w tym kafelku średnim kolorem
-                    for (int i = x; i < x + tileSize && i < originalImage.Width; i++) {
-                        for (int j = y; j < y + tileSize && j < originalImage.Height; j++) {
-                            newImage.SetPixel(i, j, averageColor);
-                        }
-                    }
+                    // Wypełnia fragment średnim kolorem
+                    FillWithColor(ptr, bmpData.Stride, fragment.Width, fragment.Height, avgColor);
                 }
             }
-            return newImage;
+            finally {
+                fragment.UnlockBits(bmpData);
+            }
+
+            return fragment;
         }
 
+        private static unsafe Color GetAverageColor(byte* ptr, int step, int width, int height) {
+            long r = 0, g = 0, b = 0;
+            int pixels = 0;
 
-        // Funkcja obliczająca średni kolor pikseli w obrębie danego kafelka
-        private static Color GetAverageColor(Bitmap image, int xStart, int yStart, int tileSize) {
-            int r = 0, g = 0, b = 0;
-            int count = 0;
-
-            for (int y = yStart; y < yStart + tileSize && y < image.Height; y++) {
-                for (int x = xStart; x < xStart + tileSize && x < image.Width; x++) {
-                    Color pixelColor = image.GetPixel(x, y);
-                    r += pixelColor.R;
-                    g += pixelColor.G;
-                    b += pixelColor.B;
-                    count++;
+            for (int y = 0; y < height; y++) {
+                var row = ptr + (y * step);
+                for (int x = 0; x < width; x++) {
+                    int i = x * 4;
+                    b += row[i];
+                    g += row[i + 1];
+                    r += row[i + 2];
+                    pixels++;
                 }
             }
 
-            r /= count;
-            g /= count;
-            b /= count;
+            return pixels == 0 ? Color.Black : Color.FromArgb(
+                (int)(r / pixels),
+                (int)(g / pixels),
+                (int)(b / pixels)
+            );
+        }
 
-            return Color.FromArgb(r, g, b);
+        private static unsafe void FillWithColor(byte* ptr, int step, int width, int height, Color color) {
+            for (int y = 0; y < height; y++) {
+                var row = ptr + (y * step);
+                for (int x = 0; x < width; x++) {
+                    int i = x * 4;
+                    row[i] = color.B;
+                    row[i + 1] = color.G;
+                    row[i + 2] = color.R;
+                    row[i + 3] = 255;
+                }
+            }
         }
     }
 }
-

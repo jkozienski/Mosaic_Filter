@@ -25,6 +25,8 @@
         private void InitializeComponent() {
             panel1 = new Panel();
             bottomPanel = new Panel();
+            mosaicPowerThread = new Label();
+            threadNumberText = new Label();
             label5 = new Label();
             mosaicPower = new TrackBar();
             label4 = new Label();
@@ -67,6 +69,8 @@
             // 
             // bottomPanel
             // 
+            bottomPanel.Controls.Add(mosaicPowerThread);
+            bottomPanel.Controls.Add(threadNumberText);
             bottomPanel.Controls.Add(label5);
             bottomPanel.Controls.Add(mosaicPower);
             bottomPanel.Controls.Add(label4);
@@ -87,10 +91,27 @@
             bottomPanel.TabIndex = 0;
             bottomPanel.Paint += bottomPanel_Paint;
             // 
+            // mosaicPowerThread
+            // 
+            mosaicPowerThread.AutoSize = true;
+            mosaicPowerThread.Location = new Point(1099, 193);
+            mosaicPowerThread.Name = "mosaicPowerThread";
+            mosaicPowerThread.Size = new Size(0, 15);
+            mosaicPowerThread.TabIndex = 70;
+            // 
+            // threadNumberText
+            // 
+            threadNumberText.AutoSize = true;
+            threadNumberText.Location = new Point(1099, 145);
+            threadNumberText.Name = "threadNumberText";
+            threadNumberText.Size = new Size(0, 15);
+            threadNumberText.TabIndex = 69;
+            threadNumberText.Click += threadNumberText_Click;
+            // 
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(734, 204);
+            label5.Location = new Point(600, 193);
             label5.Name = "label5";
             label5.Size = new Size(97, 15);
             label5.TabIndex = 65;
@@ -98,12 +119,14 @@
             // 
             // mosaicPower
             // 
-            mosaicPower.Location = new Point(837, 195);
-            mosaicPower.Maximum = 100;
-            mosaicPower.Minimum = 1;
+            mosaicPower.Location = new Point(693, 192);
+            mosaicPower.Maximum = 160;
+            mosaicPower.Minimum = 4;
             mosaicPower.Name = "mosaicPower";
-            mosaicPower.Size = new Size(120, 45);
+            mosaicPower.Size = new Size(400, 45);
+            mosaicPower.SmallChange = 4;
             mosaicPower.TabIndex = 66;
+            mosaicPower.TickFrequency = 4;
             mosaicPower.Value = 4;
             mosaicPower.Scroll += mosaicPower_Scroll;
             // 
@@ -330,5 +353,7 @@
         private Label label5;
         private TrackBar mosaicPower;
         private Label label4;
+        private Label mosaicPowerThread;
+        private Label threadNumberText;
     }
 }
