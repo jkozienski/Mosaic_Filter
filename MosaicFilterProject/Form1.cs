@@ -1,20 +1,24 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using FilterCSharp;  // Klasa imageFilterCS
+using static ImageFilterCS;  // Klasa imageFilterCS
 
 
 namespace MosaicFilterProject {
     public partial class Form1 : Form {
-        //[DllImport(@"C:\Users\Jakub\source\repos\Sem V\MosaicFilter\MosaicFilterProject\x64\Debug\FilterAsm.dll")]//laptop
-        [DllImport(@"C:\Users\Jakub\source\repos\Repozytorium Sem 5\JA\MosaicFilter\x64\Debug\FilterAsm.dll")]//komputer
+        [DllImport(@"C:\Users\Jakub\source\repos\Sem V\MosaicFilter\MosaicFilterProject\x64\Debug\FilterAsm.dll")]//laptop
+                                                                                                                  //[DllImport(@"C:\Users\Jakub\source\repos\Repozytorium Sem 5\JA\MosaicFilter\x64\Debug\FilterAsm.dll")]//komputer
         private static extern void ApplyMosaicASM(
             IntPtr sourcePtr,   // wskaźnik do danych obrazu
-            int width,          // szerokość fragmentu
-            int height          // wysokość fragmentu
+            int stride,         // szerokość linii w bajtach
+            int width,          // szerokość obrazu
+            int height,         // wysokość obrazu
+            int tileSize        // rozmiar kafelka
         );
+
 
         //static extern int imageFilterAsm(int a, int b);
         //[DllImport(@"C:\Users\Jakub\source\repos\Repozytorium Sem 5\JA\MosaicFilter\x64\Debug\FilterAsm.dll")]//komputer
@@ -26,6 +30,10 @@ namespace MosaicFilterProject {
         private string selectedImageLocation;
         public Form1() {
             InitializeComponent();
+            threadNumber.Value = Environment.ProcessorCount;
+            threadNumberText.Text = threadNumber.Value.ToString();
+            mosaicPowerThread.Text = mosaicPower.Value.ToString();
+
         }
 
         private void Form1_Load(object sender, EventArgs e) {
@@ -34,7 +42,7 @@ namespace MosaicFilterProject {
         private void label1_Click(object sender, EventArgs e) {
         }
 
-      
+
         private void filterButton_Click(object sender, EventArgs e) {
             try {
                 if (imageBeforeFilter.Image == null) return;
@@ -43,74 +51,28 @@ namespace MosaicFilterProject {
 
                 using (Bitmap originalImage = new Bitmap(imageBeforeFilter.Image))
                 using (Bitmap newImage = new Bitmap(originalImage)) {
-                    const int MAX_FRAGMENTS = 10000;
                     int tileSize = mosaicPower.Value;
 
-                    // Obliczamy początkową liczbę fragmentów
-                    int fragmentsX = (int)Math.Ceiling((double)originalImage.Width / tileSize);
-                    int fragmentsY = (int)Math.Ceiling((double)originalImage.Height / tileSize);
-                    int totalFragments = fragmentsX * fragmentsY;
-
-                    // Jeśli liczba fragmentów przekracza limit, zwiększamy rozmiar fragmentu
-                    int fragmentSize = tileSize;
-                    while (totalFragments > MAX_FRAGMENTS) {
-                        fragmentSize += tileSize * 4; // Zwiększamy o 4 kafelki
-                        fragmentsX = (int)Math.Ceiling((double)originalImage.Width / fragmentSize);
-                        fragmentsY = (int)Math.Ceiling((double)originalImage.Height / fragmentSize);
-                        totalFragments = fragmentsX * fragmentsY;
-                    }
-
-                    Bitmap[] fragments = new Bitmap[totalFragments];
-
-                    // Dzielimy obraz na fragmenty
-                    for (int y = 0; y < fragmentsY; y++) {
-                        for (int x = 0; x < fragmentsX; x++) {
-                            int index = y * fragmentsX + x;
-                            int currentWidth = Math.Min(fragmentSize, originalImage.Width - (x * fragmentSize));
-                            int currentHeight = Math.Min(fragmentSize, originalImage.Height - (y * fragmentSize));
-
-                            Rectangle cropRect = new Rectangle(
-                                x * fragmentSize,
-                                y * fragmentSize,
-                                currentWidth,
-                                currentHeight
+                    if (radioCSharp.Checked) {
+                        // Wersja C#
+                        ImageFilterCS.ApplyMosaic(newImage, tileSize, new Point(0, 0));
+                    } else {
+                        // Wersja ASM
+                        BitmapData bmpData = newImage.LockBits(
+                            new Rectangle(0, 0, newImage.Width, newImage.Height),
+                            ImageLockMode.ReadWrite,
+                            PixelFormat.Format32bppArgb);
+                        try {
+                            ApplyMosaicASM(
+                                bmpData.Scan0,          // wskaźnik do danych obrazu
+                                bmpData.Stride,         // szerokość linii w bajtach
+                                newImage.Width,         // szerokość obrazu
+                                newImage.Height,        // wysokość obrazu
+                                tileSize               // rozmiar kafelka
                             );
-
-                            fragments[index] = new Bitmap(currentWidth, currentHeight);
-                            using (Graphics g = Graphics.FromImage(fragments[index])) {
-                                g.DrawImage(originalImage,
-                                    new Rectangle(0, 0, currentWidth, currentHeight),
-                                    cropRect,
-                                    GraphicsUnit.Pixel);
-                            }
                         }
-                    }
-
-                    // Przetwarzanie równoległe - każdy wątek przetwarza jeden fragment
-                    Parallel.For(0, totalFragments, i => {
-                        if (radioCSharp.Checked) {
-                            int x = i % fragmentsX;
-                            int y = i / fragmentsX;
-                            Point fragmentPosition = new Point(x * fragmentSize, y * fragmentSize);
-
-                            fragments[i] = ImageFilterCS.ApplyMosaic(
-                                fragments[i],
-                                tileSize, // Używamy oryginalnego rozmiaru kafelka do mozaikowania
-                                fragmentPosition
-                            );
-                        } else {
-                            // Implementacja ASM...
-                        }
-                    });
-
-                    // Składanie obrazu
-                    using (Graphics g = Graphics.FromImage(newImage)) {
-                        for (int y = 0; y < fragmentsY; y++) {
-                            for (int x = 0; x < fragmentsX; x++) {
-                                int index = y * fragmentsX + x;
-                                g.DrawImage(fragments[index], x * fragmentSize, y * fragmentSize);
-                                fragments[index].Dispose();
-                            }
+                        finally {
+                            newImage.UnlockBits(bmpData);
                         }
                     }
 
@@ -119,8 +81,6 @@ namespace MosaicFilterProject {
 
                     stopwatch.Stop();
                     MessageBox.Show($"Gotowe\nCzas wykonania: {stopwatch.ElapsedMilliseconds} ms\n" +
-                                  $"Liczba fragmentów: {totalFragments}\n" +
-                                  $"Rozmiar fragmentu: {fragmentSize}px\n" +
                                   $"Rozmiar kafelka: {tileSize}px",
                         "Gotowe", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }

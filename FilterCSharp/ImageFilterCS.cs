@@ -1,66 +1,99 @@
-﻿using System;
+﻿using System.Drawing.Imaging;
 using System.Drawing;
-using System.Threading;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-namespace FilterCSharp {
-    public class ImageFilterCS {
-        public static Bitmap ApplyMosaic(Bitmap fragment, int tileSize, Point position) {
-            var bmpData = fragment.LockBits(
-                new Rectangle(0, 0, fragment.Width, fragment.Height),
-                ImageLockMode.ReadWrite,
-                PixelFormat.Format32bppArgb);
 
-            try {
-                unsafe {
-                    byte* ptr = (byte*)bmpData.Scan0;
+public class ImageFilterCS {
+    public static Bitmap ApplyMosaic(Bitmap imageFragment, int tileSize, Point position) {
+        var workArea = new Rectangle(0, 0, imageFragment.Width, imageFragment.Height);
+        var imageData = imageFragment.LockBits(workArea, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 
-                    // Sredni kolor dla fragmentu
-                    var avgColor = GetAverageColor(ptr, bmpData.Stride, fragment.Width, fragment.Height);
+        try {
+            unsafe {
+                byte* ptr = (byte*)imageData.Scan0;
 
-                    // Wypełnia fragment średnim kolorem
-                    FillWithColor(ptr, bmpData.Stride, fragment.Width, fragment.Height, avgColor);
+                // Iteracja po kafelkach
+                for (int tileY = 0; tileY < imageFragment.Height; tileY += tileSize) {
+                    for (int tileX = 0; tileX < imageFragment.Width; tileX += tileSize) {
+                        // Oblicz rzeczywisty rozmiar kafelka (może być mniejszy na krawędziach)
+                        int currentTileWidth = Math.Min(tileSize, imageFragment.Width - tileX);
+                        int currentTileHeight = Math.Min(tileSize, imageFragment.Height - tileY);
+
+                        // Oblicz średni kolor dla kafelka
+                        var averageColor = CalculateAverageTileColor(
+                            ptr,
+                            imageData.Stride,
+                            tileX,
+                            tileY,
+                            currentTileWidth,
+                            currentTileHeight
+                        );
+
+                        // Wypełnij kafelek średnim kolorem
+                        FillTileWithColor(
+                            ptr,
+                            imageData.Stride,
+                            tileX,
+                            tileY,
+                            currentTileWidth,
+                            currentTileHeight,
+                            averageColor
+                        );
+                    }
                 }
             }
-            finally {
-                fragment.UnlockBits(bmpData);
-            }
-
-            return fragment;
+        }
+        finally {
+            imageFragment.UnlockBits(imageData);
         }
 
-        private static unsafe Color GetAverageColor(byte* ptr, int step, int width, int height) {
-            long r = 0, g = 0, b = 0;
-            int pixels = 0;
+        return imageFragment;
+    }
 
-            for (int y = 0; y < height; y++) {
-                var row = ptr + (y * step);
-                for (int x = 0; x < width; x++) {
-                    int i = x * 4;
-                    b += row[i];
-                    g += row[i + 1];
-                    r += row[i + 2];
-                    pixels++;
-                }
+    private static unsafe Color CalculateAverageTileColor(
+        byte* ptr,
+        int stride,
+        int startX,
+        int startY,
+        int width,
+        int height) 
+        {
+        long totalR = 0, totalG = 0, totalB = 0;
+        int pixelCount = 0;
+
+        for (int y = 0; y < height; y++) {
+            byte* row = ptr + ((startY + y) * stride);
+            for (int x = 0; x < width; x++) {
+                int offset = (startX + x) * 4;
+                totalB += row[offset];
+                totalG += row[offset + 1];
+                totalR += row[offset + 2];
+                pixelCount++;
             }
-
-            return pixels == 0 ? Color.Black : Color.FromArgb(
-                (int)(r / pixels),
-                (int)(g / pixels),
-                (int)(b / pixels)
-            );
         }
 
-        private static unsafe void FillWithColor(byte* ptr, int step, int width, int height, Color color) {
-            for (int y = 0; y < height; y++) {
-                var row = ptr + (y * step);
-                for (int x = 0; x < width; x++) {
-                    int i = x * 4;
-                    row[i] = color.B;
-                    row[i + 1] = color.G;
-                    row[i + 2] = color.R;
-                    row[i + 3] = 255;
-                }
+        return Color.FromArgb(
+            (int)(totalR / pixelCount),
+            (int)(totalG / pixelCount),
+            (int)(totalB / pixelCount)
+        );
+    }
+
+    private static unsafe void FillTileWithColor(
+        byte* ptr,
+        int stride,
+        int startX,
+        int startY,
+        int width,
+        int height,
+        Color color)
+        {
+        for (int y = 0; y < height; y++) {
+            byte* row = ptr + ((startY + y) * stride);
+            for (int x = 0; x < width; x++) {
+                int offset = (startX + x) * 4;
+                row[offset] = color.B;
+                row[offset + 1] = color.G;
+                row[offset + 2] = color.R;
+                row[offset + 3] = 255;
             }
         }
     }
