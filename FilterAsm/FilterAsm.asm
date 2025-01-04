@@ -19,14 +19,14 @@ ApplyMosaicASM proc
     push r15
 
     ; Zapisanie parametrów
-    mov rsi, rcx               ; RSI = wskaŸnik na bufor wejœciowy
-    mov rdi, rdx               ; RDI = wskaŸnik na bufor wyjœciowy
-    mov r12d, r8d              ; R12D = wysokoœæ obrazu
-    mov r13d, r9d              ; R13D = szerokoœæ obrazu
+    mov rsi, rcx               ; RSI  wskaŸnik na bufor wejœciowy
+    mov rdi, rdx               ; RDI  wskaŸnik na bufor wyjœciowy
+    mov r12d, r8d              ; R12D  wysokoœæ obrazu
+    mov r13d, r9d              ; R13D  szerokoœæ obrazu
     
-    mov r14d, dword ptr [rbp+48]    ; R14D = indeks startowy
-    mov r15d, dword ptr [rbp+56]    ; R15D = indeks koñcowy
-    mov ebx, dword ptr [rbp+64]     ; EBX = rozmiar kafelka
+    mov r14d, dword ptr [rbp+48]    ; R14D  indeks startowy
+    mov r15d, dword ptr [rbp+56]    ; R15D  indeks koñcowy
+    mov ebx, dword ptr [rbp+64]     ; EBX  rozmiar kafelka
     
     ; Zewnêtrzna pêtla po kafelkach (wiersze)
 tile_row_loop:
@@ -87,9 +87,6 @@ pixel_col_loop:
     add eax, r9d         ; + kolumna kafelka
     add eax, r11d        ; + offset kolumny w kafelku
     shl eax, 2          ; * 4 (konwersja na bajty dla 32bpp)
-
-
-
 
     ; Wczytaj kolory z bufora wejœciowego
     movzx ecx, byte ptr [rsi + rax]      ; Wczytaj B
