@@ -1,9 +1,8 @@
 .data
     align 16
-    zero_vector dd 0, 0, 0, 0
-    mask_b dd 000000FFh, 0, 0, 0    ; Maska dla kana³u niebieskiego
-    mask_g dd 0000FF00h, 0, 0, 0    ; Maska dla kana³u zielonego
-    mask_r dd 00FF0000h, 0, 0, 0    ; Maska dla kana³u czerwonego
+    mask_b dd 000000FFh, 000000FFh, 000000FFh, 000000FFh  ; Maska dla B
+    mask_g dd 0000FF00h, 0000FF00h, 0000FF00h, 0000FF00h  ; Maska dla G
+    mask_r dd 00FF0000h, 00FF0000h, 00FF0000h, 00FF0000h  ; Maska dla R
 
 .code
 ApplyMosaicASM proc
@@ -25,12 +24,27 @@ ApplyMosaicASM proc
     push r14
     push r15
 
-    ; Zachowanie parametrów
-    mov rsi, rcx               ; RSI = wskaŸnik na bufor wejœciowy
-    mov rdi, rdx               ; RDI = wskaŸnik na bufor wyjœciowy
+    ; Zachowanie parametrów 
+    mov rsi, rcx                     ; RSI = wskaŸnik na bufor wejœciowy
+    mov rdi, rdx                   ; RDI = wskaŸnik na bufor wyjœciowy
     mov r12d, r8d             ; R12D = wysokoœæ obrazu
     mov r13d, r9d             ; R13D = szerokoœæ obrazu
+    mov r14d, dword ptr [rbp+48]  ; R14D = Start offset
+    mov r15d, dword ptr [rbp+56]  ; R15D = Start offset
     mov ebx, [rbp+64]         ; EBX = rozmiar kafelka
+
+    ; Oblicz wiersz pocz¹tkowy i koñcowy
+    mov eax, r14d
+    shr eax, 2                ; Dziel przez 4 (BGRA)
+    xor edx, edx
+    div r13d                  ; Dziel przez szerokoœæ
+    mov r14d, eax            ; R14D = wiersz pocz¹tkowy
+
+    mov eax, r15d
+    shr eax, 2                ; Dziel przez 4 (BGRA)
+    xor edx, edx
+    div r13d                  ; Dziel przez szerokoœæ
+    mov r15d, eax            ; R15D = wiersz koñcowy
 
     ; Inicjalizacja liczników kafelków
     xor r14d, r14d            ; r14d = aktualny wiersz kafelka
@@ -76,21 +90,31 @@ pixel_col_loop:
     add eax, r11d            ; + offset kolumny
     shl eax, 2              ; * 4 (BGRA)
 
-    ; Wczytaj kolory
-    movzx ecx, byte ptr [rsi + rax]      ; B
-    cvtsi2ss xmm0, ecx
-    addss xmm5, xmm0                     ; Dodaj do sumy B
+    ; Wczytaj 4 piksele na raz (16 bajtów - BGRABGRABGRABGRA)
+    movdqu xmm0, [rsi + rax]    ; Wczytaj 4 piksele BGRA naraz
 
-    movzx ecx, byte ptr [rsi + rax + 1]  ; G
-    cvtsi2ss xmm0, ecx
-    addss xmm6, xmm0                     ; Dodaj do sumy G
+    ; Wyodrêbnij i przetwórz sk³adow¹ B
+    movdqa xmm1, xmm0           ; Kopia danych
+    pand xmm1, xmmword ptr [mask_b]  ; Wyodrêbnij sk³adow¹ B
+    cvtdq2ps xmm1, xmm1         ; Konwertuj 4 wartoœci B na float
+    addps xmm5, xmm1            ; Dodaj 4 wartoœci B do sumy
 
-    movzx ecx, byte ptr [rsi + rax + 2]  ; R
-    cvtsi2ss xmm0, ecx
-    addss xmm7, xmm0                     ; Dodaj do sumy R
+    ; Wyodrêbnij i przetwórz sk³adow¹ G
+    movdqa xmm2, xmm0           ; Kopia danych
+    pand xmm2, xmmword ptr [mask_g]  ; Wyodrêbnij sk³adow¹ G
+    psrld xmm2, 8               ; Przesuñ G do pozycji najm³odszego bajtu
+    cvtdq2ps xmm2, xmm2         ; Konwertuj 4 wartoœci G na float
+    addps xmm6, xmm2            ; Dodaj 4 wartoœci G do sumy
 
-    inc r8d                    ; Zwiêksz licznik pikseli
-    inc r11d                   ; Nastêpna kolumna
+    ; Wyodrêbnij i przetwórz sk³adow¹ R
+    movdqa xmm3, xmm0           ; Kopia danych
+    pand xmm3, xmmword ptr [mask_r]  ; Wyodrêbnij sk³adow¹ R
+    psrld xmm3, 16              ; Przesuñ R do pozycji najm³odszego bajtu
+    cvtdq2ps xmm3, xmm3         ; Konwertuj 4 wartoœci R na float
+    addps xmm7, xmm3            ; Dodaj 4 wartoœci R do sumy
+
+    add r8d, 4                  ; Zwiêksz licznik o 4 piksele
+    add r11d, 4                 ; PrzejdŸ do nastêpnych 4 pikseli
     jmp pixel_col_loop
 
 pixel_row_next:
@@ -98,24 +122,38 @@ pixel_row_next:
     jmp pixel_row_loop
 
 calc_average:
-    ; Oblicz œrednie
     test r8d, r8d              ; SprawdŸ czy mamy jakieœ piksele
     jz next_tile_col
-    
-    cvtsi2ss xmm4, r8d        ; Konwertuj licznik na float
-    
-    ; Oblicz œrednie wartoœci
-    divss xmm5, xmm4          ; Œrednia B
-    divss xmm6, xmm4          ; Œrednia G
-    divss xmm7, xmm4          ; Œrednia R
 
-    ; Konwertuj na ca³kowite
-    cvttss2si ecx, xmm5
-    mov r8b, cl               ; Zachowaj B
-    cvttss2si ecx, xmm6
-    mov r9b, cl               ; Zachowaj G
-    cvttss2si ecx, xmm7
-    mov r10b, cl              ; Zachowaj R
+    ; Zsumuj wszystkie sk³adowe w rejestrach wektorowych
+    movaps xmm1, xmm5          ; Suma B
+    haddps xmm1, xmm1          ; Suma horyzontalna (1+2, 3+4)
+    haddps xmm1, xmm1          ; Suma horyzontalna (12+34)
+    
+    movaps xmm2, xmm6          ; Suma G
+    haddps xmm2, xmm2
+    haddps xmm2, xmm2
+
+    movaps xmm3, xmm7          ; Suma R
+    haddps xmm3, xmm3
+    haddps xmm3, xmm3
+
+    ; Konwertuj licznik na float i przygotuj do dzielenia
+    cvtsi2ss xmm0, r8d
+    shufps xmm0, xmm0, 0       ; Skopiuj wartoœæ do wszystkich elementów
+
+    ; Oblicz œrednie
+    divss xmm1, xmm0           ; Œrednia B
+    divss xmm2, xmm0           ; Œrednia G
+    divss xmm3, xmm0           ; Œrednia R
+
+    ; Konwertuj wyniki na liczby ca³kowite
+    cvttss2si ecx, xmm1
+    mov r8b, cl                ; Zachowaj œredni¹ B
+    cvttss2si ecx, xmm2
+    mov r9b, cl                ; Zachowaj œredni¹ G
+    cvttss2si ecx, xmm3
+    mov r10b, cl               ; Zachowaj œredni¹ R
 
     ; Zapisz œrednie wartoœci do kafelka
     xor r11d, r11d            ; Reset licznika wierszy

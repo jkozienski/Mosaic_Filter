@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 using static ImageFilterCS;  // Klasa imageFilterCS
 
@@ -74,8 +75,7 @@ namespace MosaicFilterProject {
                         return;
                     }
 
-                    using (Bitmap filteredBitmap = new Bitmap(sourceBitmap)) 
-                    {
+                    using (Bitmap filteredBitmap = new Bitmap(sourceBitmap)) {
                         BitmapData sourceData = null;
                         BitmapData filteredData = null;
 
@@ -93,46 +93,52 @@ namespace MosaicFilterProject {
                             byte[] resultBuffer = new byte[bytes]; //Kopia obrazu źródłowego
                             Marshal.Copy(sourceData.Scan0, sourceBuffer, 0, bytes);//Kopiowanie danych z obrazu źródłowego do bufora
 
-                            IntPtr sourcePtr = Marshal.AllocHGlobal(bytes); //Alokacja pamięci dla wskaźnika do obrazu źródłowego
-                            IntPtr resultPtr = Marshal.AllocHGlobal(bytes); //Alokacja pamięci dla wskaźnika do obrazu wynikowego
+                            int alignedBytes = (bytes + 15) & ~15;
+                            IntPtr sourcePtr = Marshal.AllocHGlobal(alignedBytes); //Alokacja pamięci dla wskaźnika do obrazu źródłowego
+                            IntPtr resultPtr = Marshal.AllocHGlobal(alignedBytes); //Alokacja pamięci dla wskaźnika do obrazu wynikowego
 
                             try {
                                 Marshal.Copy(sourceBuffer, 0, sourcePtr, bytes); //Kopiowanie danych z bufora do wskaźnika
                                 Marshal.Copy(sourceBuffer, 0, resultPtr, bytes); //Kopiowanie danych z bufora do wskaźnika
 
-                                int bytesPerThread = bytes / threadCount; //Liczba bajtów na wątek
-                                int[] start = new int[threadCount];
-                                int[] end = new int[threadCount];
-                                for (int i = 0; i < threadCount; i++) {
-                                    start[i] = i * bytesPerThread;
-                                    end[i] = (i == threadCount - 1) ? bytes : (i + 1) * bytesPerThread;
-                                }
+                                // Podzial po wierszach obrazu
+                                int rowsPerThread = height / threadCount;
+                                int[] startRows = new int[threadCount];
+                                int[] endRows = new int[threadCount];
 
-                                //Parallel.For(0, threadCount, i =>
-                                //{
-                                if (radioCSharp.Checked) {
-                                    ImageFilterCS.ApplyMosaic(sourcePtr, resultPtr,height,width,0,0,tileSize);
-                                } else if(radioASM.Checked) {
-                                    ApplyMosaicASM(sourcePtr, resultPtr, height, width, 0, 0, tileSize);
+                                for (int i = 0; i < threadCount; i++) {
+                                    startRows[i] = i * rowsPerThread;
+                                    endRows[i] = (i == threadCount - 1) ? height : (i + 1) * rowsPerThread;
                                 }
-                                // });
+                                // Konwertuje wiersze na bajty
+                                int[] start = startRows.Select(row => row * width * 4).ToArray();
+                                int[] end = endRows.Select(row => row * width * 4).ToArray();
+                                Parallel.For(0, threadCount, i => {
+                                    if (radioCSharp.Checked) {
+                                        ImageFilterCS.ApplyMosaic(sourcePtr, resultPtr, height, width, start[i], end[i], tileSize);
+                                    } else if (radioASM.Checked) {
+                                        ApplyMosaicASM(sourcePtr, resultPtr, height, width, start[i], end[i], tileSize);
+                                    }
+                                });
                                 Marshal.Copy(resultPtr, resultBuffer, 0, bytes); //Kopiowanie danych z wskaźnika do bufora
                                 Marshal.Copy(resultBuffer, 0, filteredData.Scan0, bytes); //Kopiowanie danych z bufora do obrazu wynikowego
+
                             }
                             finally {
+
                                 // Zwalnia pamięc
                                 Marshal.FreeHGlobal(sourcePtr);
                                 Marshal.FreeHGlobal(resultPtr);
                             }
                         }
                         finally {
-                            
+
                             if (sourceData != null) sourceBitmap.UnlockBits(sourceData);
                             if (filteredData != null) filteredBitmap.UnlockBits(filteredData);
                         }
                         stopwatch.Stop();
                         if (imageAfterFilter.Image != null) {
-                        imageAfterFilter.Image?.Dispose();
+                            imageAfterFilter.Image?.Dispose();
 
                         }
                         imageAfterFilter.Image = new Bitmap(filteredBitmap);
@@ -176,11 +182,10 @@ namespace MosaicFilterProject {
         }
 
         private void clearImage_Click(object sender, EventArgs e) {
-            imageBeforeFilter.Image = null;
+            originalImage = null;
             imageAfterFilter.Image = null;
-
+            imageBeforeFilter.Image = null;
             locationTextBox.Clear();
-
             selectedImageLocation = string.Empty;
         }
 
@@ -214,5 +219,207 @@ namespace MosaicFilterProject {
             }
         }
 
+        private void saveImage_Click(object sender, EventArgs e) {
+            try {
+                // Sprawdź czy jest jakieś zdjęcie do zapisania
+                if (imageAfterFilter.Image == null) {
+                    MessageBox.Show("Brak zdjęcia do zapisania.", "Błąd",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Konfiguracja okna dialogowego zapisu
+                SaveFileDialog saveDialog = new SaveFileDialog {
+                    Filter = "Pliki PNG (*.png)|*.png|Pliki JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|Pliki BMP (*.bmp)|*.bmp|Wszystkie pliki (*.*)|*.*",
+                    FilterIndex = 1,
+                    Title = "Zapisz przetworzone zdjęcie",
+                    AddExtension = true,
+                    DefaultExt = "png"
+                };
+
+                // Pokaż okno dialogowe zapisu
+                if (saveDialog.ShowDialog() == DialogResult.OK) {
+                    string extension = Path.GetExtension(saveDialog.FileName).ToLower();
+                    ImageFormat format = ImageFormat.Png; // domyślny format
+
+                    // Wybierz odpowiedni format na podstawie rozszerzenia
+                    switch (extension) {
+                        case ".jpg":
+                        case ".jpeg":
+                            format = ImageFormat.Jpeg;
+                            break;
+                        case ".bmp":
+                            format = ImageFormat.Bmp;
+                            break;
+                        case ".png":
+                            format = ImageFormat.Png;
+                            break;
+                    }
+
+                    // Zapisz obraz
+                    using (Bitmap bmp = new Bitmap(imageAfterFilter.Image)) {
+                        bmp.Save(saveDialog.FileName, format);
+                    }
+
+                    MessageBox.Show("Zdjęcie zostało zapisane pomyślnie.", "Sukces",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex) {
+                MessageBox.Show($"Wystąpił błąd podczas zapisywania pliku:\n{ex.Message}",
+                    "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void testBtn_Click(object sender, EventArgs e) {
+            if (string.IsNullOrEmpty(selectedImageLocation) || imageBeforeFilter.Image == null) {
+                MessageBox.Show("Proszę najpierw załadować obraz.",
+                    "Brak obrazu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try {
+                const int TEST_RUNS = 5;
+                int[] threadCounts = { 1, 2, 4, 8, 16, 32, 64 };
+
+                using (Bitmap sourceBitmap = new Bitmap(imageBeforeFilter.Image)) {
+                    int width = sourceBitmap.Width;
+                    int height = sourceBitmap.Height;
+
+                    StringBuilder results = new StringBuilder();
+                    results.AppendLine($"Test wydajności - {DateTime.Now:yyyy-MM-dd HH:mm:ss} (UTC)");
+                    results.AppendLine($"Wymiary obrazu: {width}x{height}");
+                    results.AppendLine($"Rozmiar kafelka: {mosaicPower.Value}px"); 
+                    results.AppendLine($"Liczba powtórzeń testu: {TEST_RUNS}");
+                    results.AppendLine(new string('-', 50));
+                    results.AppendLine("\nWyniki testów:");
+                    results.AppendLine("Wątki\tASM[ms]\tC#[ms]\tPrzyspieszenie");
+                    results.AppendLine(new string('-', 50));
+
+                    using (Bitmap filteredBitmap = new Bitmap(sourceBitmap)) {
+                        BitmapData sourceData = null;
+                        BitmapData filteredData = null;
+
+                        try {
+                            sourceData = sourceBitmap.LockBits(
+                                new Rectangle(0, 0, width, height),
+                                ImageLockMode.ReadOnly,
+                                PixelFormat.Format32bppRgb);
+
+                            filteredData = filteredBitmap.LockBits(
+                                new Rectangle(0, 0, width, height),
+                                ImageLockMode.WriteOnly,
+                                PixelFormat.Format32bppRgb);
+
+                            int stride = sourceData.Stride;
+                            int bytes = Math.Abs(stride) * height;
+                            byte[] sourceBuffer = new byte[bytes];
+                            byte[] resultBuffer = new byte[bytes];
+                            Marshal.Copy(sourceData.Scan0, sourceBuffer, 0, bytes);
+
+                            IntPtr sourcePtr = Marshal.AllocHGlobal(bytes);
+                            IntPtr resultPtr = Marshal.AllocHGlobal(bytes);
+
+                            try {
+                                int tileSize = mosaicPower.Value;
+
+                                foreach (int threadCount in threadCounts) {
+                                    long[] asmTimes = new long[TEST_RUNS];
+                                    long[] csharpTimes = new long[TEST_RUNS];
+
+                                    int rowsPerThread = height / threadCount;
+                                    int[] startRows = new int[threadCount];
+                                    int[] endRows = new int[threadCount];
+
+                                    for (int i = 0; i < threadCount; i++) {
+                                        startRows[i] = i * rowsPerThread;
+                                        endRows[i] = (i == threadCount - 1) ? height : (i + 1) * rowsPerThread;
+                                    }
+
+                                    int[] start = startRows.Select(row => row * width * 4).ToArray();
+                                    int[] end = endRows.Select(row => row * width * 4).ToArray();
+
+                                    // Testy ASM
+                                    for (int i = 0; i < TEST_RUNS; i++) {
+                                        Marshal.Copy(sourceBuffer, 0, sourcePtr, bytes);
+                                        Marshal.Copy(sourceBuffer, 0, resultPtr, bytes);
+
+                                        var sw = Stopwatch.StartNew();
+                                        Parallel.For(0, threadCount, new ParallelOptions {
+                                            MaxDegreeOfParallelism = threadCount
+                                        }, j =>
+                                        {
+                                            ApplyMosaicASM(sourcePtr, resultPtr, height, width,
+                                                start[j], end[j], tileSize);
+                                        });
+                                        sw.Stop();
+                                        asmTimes[i] = sw.ElapsedMilliseconds;
+                                    }
+
+                                    // Testy C#
+                                    for (int i = 0; i < TEST_RUNS; i++) {
+                                        Marshal.Copy(sourceBuffer, 0, sourcePtr, bytes);
+                                        Marshal.Copy(sourceBuffer, 0, resultPtr, bytes);
+
+                                        var sw = Stopwatch.StartNew();
+                                        Parallel.For(0, threadCount, new ParallelOptions {
+                                            MaxDegreeOfParallelism = threadCount
+                                        }, j =>
+                                        {
+                                            ImageFilterCS.ApplyMosaic(sourcePtr, resultPtr, height, width,
+                                                start[j], end[j], tileSize);
+                                        });
+                                        sw.Stop();
+                                        csharpTimes[i] = sw.ElapsedMilliseconds;
+                                    }
+
+                                    double asmAvg = asmTimes.Average();
+                                    double csharpAvg = csharpTimes.Average();
+                                    double speedup = csharpAvg / asmAvg;
+
+                                    results.AppendLine(
+                                        $"{threadCount,2}\t{asmAvg,6:F1}\t{csharpAvg,6:F1}\t{speedup,7:F2}x");
+                                }
+
+                                results.AppendLine(new string('-', 50));
+
+                                // Wyświetl wyniki
+                                MessageBox.Show(results.ToString(), "Wyniki testów",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                // Zapisz wyniki do pliku
+                                string logFileName = $"benchmark_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+                                File.WriteAllText(logFileName, results.ToString());
+                            }
+                            finally {
+                                Marshal.FreeHGlobal(sourcePtr);
+                                Marshal.FreeHGlobal(resultPtr);
+                            }
+                        }
+                        finally {
+                            if (sourceData != null)
+                                sourceBitmap.UnlockBits(sourceData);
+                            if (filteredData != null)
+                                filteredBitmap.UnlockBits(filteredData);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) {
+                MessageBox.Show($"Wystąpił błąd podczas testów:\n{ex.Message}",
+                    "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        // Metoda pomocnicza do obliczania odchylenia standardowego
+        private double CalculateStdDev(long[] values, double mean) {
+            double sumOfSquaresOfDifferences = values.Select(val =>
+                (val - mean) * (val - mean)).Sum();
+            return Math.Sqrt(sumOfSquaresOfDifferences / values.Length);
+        }
+
     }
+
+
+
+
 }

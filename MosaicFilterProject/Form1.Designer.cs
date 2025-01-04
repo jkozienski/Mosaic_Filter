@@ -25,6 +25,7 @@
         private void InitializeComponent() {
             panel1 = new Panel();
             bottomPanel = new Panel();
+            saveImage = new Button();
             mosaicPowerThread = new Label();
             threadNumberText = new Label();
             label5 = new Label();
@@ -46,6 +47,7 @@
             leftPanel = new Panel();
             leftPanelLabel = new Label();
             imageBeforeFilter = new PictureBox();
+            testBtn = new Button();
             panel1.SuspendLayout();
             bottomPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)mosaicPower).BeginInit();
@@ -68,6 +70,8 @@
             // 
             // bottomPanel
             // 
+            bottomPanel.Controls.Add(testBtn);
+            bottomPanel.Controls.Add(saveImage);
             bottomPanel.Controls.Add(mosaicPowerThread);
             bottomPanel.Controls.Add(threadNumberText);
             bottomPanel.Controls.Add(label5);
@@ -88,6 +92,16 @@
             bottomPanel.Size = new Size(1657, 400);
             bottomPanel.TabIndex = 0;
             bottomPanel.Paint += bottomPanel_Paint;
+            // 
+            // saveImage
+            // 
+            saveImage.Location = new Point(1291, 28);
+            saveImage.Name = "saveImage";
+            saveImage.Size = new Size(241, 118);
+            saveImage.TabIndex = 71;
+            saveImage.Text = "Zapisz obraz";
+            saveImage.UseVisualStyleBackColor = true;
+            saveImage.Click += saveImage_Click;
             // 
             // mosaicPowerThread
             // 
@@ -170,7 +184,7 @@
             clearImage.Name = "clearImage";
             clearImage.Size = new Size(171, 83);
             clearImage.TabIndex = 7;
-            clearImage.Text = "Wyczyść zdjecie";
+            clearImage.Text = "Wyczyść obraz";
             clearImage.UseVisualStyleBackColor = true;
             clearImage.Click += clearImage_Click;
             // 
@@ -228,11 +242,11 @@
             // 
             // filterButton
             // 
-            filterButton.Location = new Point(1114, 3);
+            filterButton.Location = new Point(955, 28);
             filterButton.Name = "filterButton";
-            filterButton.Size = new Size(343, 173);
+            filterButton.Size = new Size(241, 118);
             filterButton.TabIndex = 1;
-            filterButton.Text = "Filtruj zdjecie";
+            filterButton.Text = "Filtruj obraz";
             filterButton.UseVisualStyleBackColor = true;
             filterButton.Click += filterButton_Click;
             // 
@@ -242,7 +256,7 @@
             imageUpload.Name = "imageUpload";
             imageUpload.Size = new Size(171, 83);
             imageUpload.TabIndex = 0;
-            imageUpload.Text = "Wybierz zdjecie";
+            imageUpload.Text = "Wybierz obraz";
             imageUpload.UseVisualStyleBackColor = true;
             imageUpload.Click += imageUpload_Click;
             // 
@@ -301,6 +315,16 @@
             imageBeforeFilter.TabIndex = 0;
             imageBeforeFilter.TabStop = false;
             // 
+            // testBtn
+            // 
+            testBtn.Location = new Point(574, 184);
+            testBtn.Name = "testBtn";
+            testBtn.Size = new Size(171, 83);
+            testBtn.TabIndex = 72;
+            testBtn.Text = "Test";
+            testBtn.UseVisualStyleBackColor = true;
+            testBtn.Click += testBtn_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
@@ -349,5 +373,7 @@
         private Label label4;
         private Label mosaicPowerThread;
         private Label threadNumberText;
+        private Button saveImage;
+        private Button testBtn;
     }
 }
