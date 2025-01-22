@@ -6,13 +6,14 @@
 
 .code
 ApplyMosaicASM proc
-    ; RCX - InBuffer
-    ; RDX - OutBuffer
-    ; R8D - height
-    ; R9D - width
-    ; [RSP+48] - start     
-    ; [RSP+56] - end
-    ; [RSP+64] - tileSize
+    ; Parametry:
+    ; RCX - wskaÅºnik do bufora wejÅ›ciowego (InBuffer)
+    ; RDX - wskaÅºnik do bufora wyjÅ›ciowego (OutBuffer) 
+    ; R8D - wysokoÅ›Ä‡ obrazu (height)
+    ; R9D - szerokoÅ›Ä‡ obrazu (width)
+    ; [RSP+48] - poczÄ…tkowy offset dla wÄ…tku (start)     
+    ; [RSP+56] - koÅ„cowy offset dla wÄ…tku (end)
+    ; [RSP+64] - rozmiar kafelka (tileSize)
 
     push rbp
     mov rbp, rsp
@@ -24,111 +25,101 @@ ApplyMosaicASM proc
     push r14
     push r15
 
-    ; Zachowanie parametrów 
-    mov rsi, rcx                     ; RSI = wskaŸnik na bufor wejœciowy
-    mov rdi, rdx                   ; RDI = wskaŸnik na bufor wyjœciowy
-    mov r12d, r8d             ; R12D = wysokoœæ obrazu
-    mov r13d, r9d             ; R13D = szerokoœæ obrazu
-    mov r14d, dword ptr [rbp+48]  ; R14D = Start offset
-    mov r15d, dword ptr [rbp+56]  ; R15D = Start offset
-    mov ebx, [rbp+64]         ; EBX = rozmiar kafelka
+    ; parametry do rejestrÃ³w
+    mov rsi, rcx                     ; RSI - wskaÅºnik na bufor ÅºrÃ³dÅ‚owy
+    mov rdi, rdx                     ; RDI - wskaÅºnik na bufor wynikowy 
+    mov r12d, r8d                    ; R12D - wysokoÅ›Ä‡ obrazu
+    mov r13d, r9d                    ; R13D - szerokoÅ›Ä‡ obrazu
+    mov r14d, dword ptr [rbp+48]     ; R14D - startIndex (offset poczÄ…tku dla wÄ…tku)
+    mov r15d, dword ptr [rbp+56]     ; R15D - finishIndex (offset koÅ„ca dla wÄ…tku)
+    mov ebx, [rbp+64]                ; EBX - rozmiar kafelka (tileSize)
 
-    ; Oblicz wiersz pocz¹tkowy i koñcowy
-    mov eax, r14d
-    shr eax, 2                ; Dziel przez 4 (BGRA)
-    xor edx, edx
-    div r13d                  ; Dziel przez szerokoœæ
-    mov r14d, eax            ; R14D = wiersz pocz¹tkowy
 
-    mov eax, r15d
-    shr eax, 2                ; Dziel przez 4 (BGRA)
-    xor edx, edx
-    div r13d                  ; Dziel przez szerokoœæ
-    mov r15d, eax            ; R15D = wiersz koñcowy
-
-    ; Inicjalizacja liczników kafelków
-    xor r14d, r14d            ; r14d = aktualny wiersz kafelka
+     ; PÄ™tla po wierszach kafelkÃ³w
 tile_row_loop:
-    cmp r14d, r12d            ; SprawdŸ czy nie przekroczyliœmy wysokoœci
+    cmp r14d, r12d            ; Sprawdza przekroczenie wysokoÅ›ci
     jge done
 
-    xor r15d, r15d            ; r15d = aktualna kolumna kafelka
+    xor r15d, r15d            ;   kolumna kafelka (x)
 tile_col_loop:
-    cmp r15d, r13d            ; SprawdŸ czy nie przekroczyliœmy szerokoœci
+    cmp r15d, r13d            ; Sprawdz przekroczenie szerokoÅ›ci
     jge next_tile_row
 
-    ; Inicjalizacja sum kolorów
-    pxor xmm5, xmm5           ; Suma dla B
-    pxor xmm6, xmm6           ; Suma dla G
-    pxor xmm7, xmm7           ; Suma dla R
-    xor r8d, r8d              ; Licznik pikseli
+   
+     ; Inicjalizacja sum kolorÃ³w dla kafelka
+    pxor xmm5, xmm5           ;  sumy skÅ‚adowej B
+    pxor xmm6, xmm6           ;  sumy skÅ‚adowej G
+    pxor xmm7, xmm7           ;  sumy skÅ‚adowej R
+    xor r8d, r8d              ; Licznik pikseli w kafelku
 
-    ; Iteracja po pikselach w kafelku
-    xor r10d, r10d            ; Offset wiersza w kafelku
+  ; Iteracja po pikselach w kafelku
+    xor r10d, r10d                   ; y-offset w kafelku
 pixel_row_loop:
     mov eax, r14d
-    add eax, r10d             ; Aktualny wiersz
-    cmp eax, r12d            ; SprawdŸ czy nie wyszliœmy poza obraz
+    add eax, r10d                    ; Aktualny y = wiersz_kafelka + y_offset
+    cmp eax, r12d                    ; Sprawdza czy nie wyszÅ‚o poza obraz
     jge calc_average
-    cmp r10d, ebx            ; SprawdŸ czy nie wyszliœmy poza kafelek
+    cmp r10d, ebx                    ; Sprawdza czy nie wyszÅ‚o poza kafelek
     jge calc_average
 
-    xor r11d, r11d            ; Offset kolumny w kafelku
+    xor r11d, r11d                   ; x-offset w kafelku
 pixel_col_loop:
     mov eax, r15d
-    add eax, r11d             ; Aktualna kolumna
-    cmp eax, r13d            ; SprawdŸ czy nie wyszliœmy poza obraz
+    add eax, r11d                    ; Aktualny x = kolumna_kafelka + x_offset
+    cmp eax, r13d                    ; Sprawdza czy nie wyszÅ‚o poza obraz
     jge pixel_row_next
-    cmp r11d, ebx            ; SprawdŸ czy nie wyszliœmy poza kafelek
+    cmp r11d, ebx                    ; Sprawdza czy nie wyszÅ‚o poza kafelek
     jge pixel_row_next
 
-    ; Oblicz pozycjê piksela
+    ; Oblicz pozycjÄ™ piksela
     mov eax, r14d
     add eax, r10d            ; Wiersz + offset
-    imul eax, r13d           ; * szerokoœæ
+    imul eax, r13d           ; * szerokoÅ›Ä‡
     add eax, r15d            ; + kolumna
     add eax, r11d            ; + offset kolumny
     shl eax, 2              ; * 4 (BGRA)
 
-    ; Wczytaj 4 piksele na raz (16 bajtów - BGRABGRABGRABGRA)
+    ;SIMD
+    ; Wczytaj 4 piksele na raz (16 bajtÃ³w - BGRA)
     movdqu xmm0, [rsi + rax]    ; Wczytaj 4 piksele BGRA naraz
 
-    ; Wyodrêbnij i przetwórz sk³adow¹ B
-    movdqa xmm1, xmm0           ; Kopia danych
-    pand xmm1, xmmword ptr [mask_b]  ; Wyodrêbnij sk³adow¹ B
-    cvtdq2ps xmm1, xmm1         ; Konwertuj 4 wartoœci B na float
-    addps xmm5, xmm1            ; Dodaj 4 wartoœci B do sumy
+    ; WyodrÄ™bnia i przetwÃ³rza skÅ‚adowÄ… B
+    movdqa xmm1, xmm0           ; Kopiowanie 4 pikseli do xmm1
+    pand xmm1, xmmword ptr [mask_b]  ; zostawia tylko  B
+    cvtdq2ps xmm1, xmm1         ; Konwertuje 4 wartoÅ›ci int na float
+    addps xmm5, xmm1            ; 
 
-    ; Wyodrêbnij i przetwórz sk³adow¹ G
-    movdqa xmm2, xmm0           ; Kopia danych
-    pand xmm2, xmmword ptr [mask_g]  ; Wyodrêbnij sk³adow¹ G
-    psrld xmm2, 8               ; Przesuñ G do pozycji najm³odszego bajtu
-    cvtdq2ps xmm2, xmm2         ; Konwertuj 4 wartoœci G na float
-    addps xmm6, xmm2            ; Dodaj 4 wartoœci G do sumy
+    ;  przetwÃ³rz  G
+    movdqa xmm2, xmm0           
+    pand xmm2, xmmword ptr [mask_g]  
+    psrld xmm2, 8               ; PrzesuniÄ™cie bitowe  
+    cvtdq2ps xmm2, xmm2        
+    addps xmm6, xmm2            
 
-    ; Wyodrêbnij i przetwórz sk³adow¹ R
-    movdqa xmm3, xmm0           ; Kopia danych
-    pand xmm3, xmmword ptr [mask_r]  ; Wyodrêbnij sk³adow¹ R
-    psrld xmm3, 16              ; Przesuñ R do pozycji najm³odszego bajtu
-    cvtdq2ps xmm3, xmm3         ; Konwertuj 4 wartoœci R na float
-    addps xmm7, xmm3            ; Dodaj 4 wartoœci R do sumy
+    ;  przetwÃ³rz  R
+    movdqa xmm3, xmm0          
+    pand xmm3, xmmword ptr [mask_r]  
+    psrld xmm3, 16                ; PrzesuniÄ™cie bitowe  
+    cvtdq2ps xmm3, xmm3        
+    addps xmm7, xmm3            
 
-    add r8d, 4                  ; Zwiêksz licznik o 4 piksele
-    add r11d, 4                 ; PrzejdŸ do nastêpnych 4 pikseli
+    add r8d, 4                  ; ZwiÄ™ksz licznik o 4 piksele
+    add r11d, 4                 ; PrzejdÅº do nastÄ™pnych 4 pikseli
     jmp pixel_col_loop
 
 pixel_row_next:
-    inc r10d                   ; Nastêpny wiersz
+    inc r10d                   ; kolejny wiersz
     jmp pixel_row_loop
 
 calc_average:
-    test r8d, r8d              ; SprawdŸ czy mamy jakieœ piksele
+    test r8d, r8d              ; Sprawdza czy mamy jakieÅ› piksele
     jz next_tile_col
 
-    ; Zsumuj wszystkie sk³adowe w rejestrach wektorowych
+    ;SIMD
+    ; sumuje wszystkie skÅ‚adowe w rejestrach wektorowych
     movaps xmm1, xmm5          ; Suma B
-    haddps xmm1, xmm1          ; Suma horyzontalna (1+2, 3+4)
-    haddps xmm1, xmm1          ; Suma horyzontalna (12+34)
+    haddps xmm1, xmm1          ; Suma  (1+2, 3+4)
+    haddps xmm1, xmm1          ; Suma  (12+34)
     
     movaps xmm2, xmm6          ; Suma G
     haddps xmm2, xmm2
@@ -138,46 +129,46 @@ calc_average:
     haddps xmm3, xmm3
     haddps xmm3, xmm3
 
-    ; Konwertuj licznik na float i przygotuj do dzielenia
+    ; konwersja licznika na float i dzielenie
     cvtsi2ss xmm0, r8d
-    shufps xmm0, xmm0, 0       ; Skopiuj wartoœæ do wszystkich elementów
+    shufps xmm0, xmm0, 0       ; Skopiuj wartoÅ›Ä‡ do wszystkich elementÃ³w
 
-    ; Oblicz œrednie
-    divss xmm1, xmm0           ; Œrednia B
-    divss xmm2, xmm0           ; Œrednia G
-    divss xmm3, xmm0           ; Œrednia R
+    ; Oblicaz Å›rednie
+    divss xmm1, xmm0           ; Åšrednia B
+    divss xmm2, xmm0           ; Åšrednia G
+    divss xmm3, xmm0           ; Åšrednia R
 
-    ; Konwertuj wyniki na liczby ca³kowite
+    ; Konwertuje wyniki na liczby caÅ‚kowite
     cvttss2si ecx, xmm1
-    mov r8b, cl                ; Zachowaj œredni¹ B
+    mov r8b, cl                ; Zachowuje Å›redniÄ… B
     cvttss2si ecx, xmm2
-    mov r9b, cl                ; Zachowaj œredni¹ G
+    mov r9b, cl                ; Zachowuje Å›redniÄ… G
     cvttss2si ecx, xmm3
-    mov r10b, cl               ; Zachowaj œredni¹ R
+    mov r10b, cl               ; Zachowuje Å›redniÄ… R
 
-    ; Zapisz œrednie wartoœci do kafelka
-    xor r11d, r11d            ; Reset licznika wierszy
+    ; Zapisuje Å›rednie wartoÅ›ci do kafelka
+    xor r11d, r11d            ; Resetuje licznika wierszy
 write_row_loop:
     mov eax, r14d
     add eax, r11d             ; Aktualny wiersz
-    cmp eax, r12d            ; SprawdŸ czy nie wyszliœmy poza obraz
+    cmp eax, r12d            ; Sprawdza czy nie wyszÅ‚o poza obraz
     jge next_tile_col
-    cmp r11d, ebx            ; SprawdŸ czy nie wyszliœmy poza kafelek
-    jge next_tile_col
-
+    cmp r11d, ebx            ; Sprawdza czy nie wyszÅ‚o poza kafelek
+    jge next_tile_col           
+                                
     xor ecx, ecx              ; Reset licznika kolumn
 write_col_loop:
     mov eax, r15d
     add eax, ecx              ; Aktualna kolumna
-    cmp eax, r13d            ; SprawdŸ czy nie wyszliœmy poza obraz
+    cmp eax, r13d            ; Sprawdza czy nie wyszÅ‚o poza obraz
     jge write_row_next
-    cmp ecx, ebx             ; SprawdŸ czy nie wyszliœmy poza kafelek
+    cmp ecx, ebx             ; Sprawdza czy nie wyszÅ‚o poza kafelek
     jge write_row_next
 
-    ; Oblicz pozycjê do zapisu
+    ; Oblicaz pozycjÄ™ do zapisu w obrazie
     mov eax, r14d
     add eax, r11d            ; Wiersz + offset
-    imul eax, r13d           ; * szerokoœæ
+    imul eax, r13d           ; * szerokoÅ›Ä‡
     add eax, r15d            ; + kolumna
     add eax, ecx             ; + offset kolumny
     shl eax, 2              ; * 4 (BGRA)
@@ -188,19 +179,19 @@ write_col_loop:
     mov byte ptr [rdi + rax + 2], r10b   ; R
     mov byte ptr [rdi + rax + 3], 255    ; A
 
-    inc ecx                    ; Nastêpna kolumna
+    inc ecx                    ; NastÄ™pna kolumna
     jmp write_col_loop
 
 write_row_next:
-    inc r11d                   ; Nastêpny wiersz
+    inc r11d                   ; NastÄ™pny wiersz
     jmp write_row_loop
 
 next_tile_col:
-    add r15d, ebx             ; Nastêpny kafelek w wierszu
+    add r15d, ebx             ; NastÄ™pny kafelek w wierszu
     jmp tile_col_loop
 
 next_tile_row:
-    add r14d, ebx             ; Nastêpny wiersz kafelków
+    add r14d, ebx             ; NastÄ™pny wiersz kafelkÃ³w
     jmp tile_row_loop
 
 done:
